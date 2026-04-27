@@ -507,7 +507,8 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const dbRef = (colName) => db.collection('artifacts').doc('pos-app').collection('public').doc('data').collection(colName);
+        const dbRef = (colName) => db.collection('artifacts').doc('pos-app').collection('users').doc(state.user.uid).collection(colName);
+        const publicDbRef = (colName) => db.collection('artifacts').doc('pos-app').collection('public').doc('data').collection(colName);
 
         const state = {
             user: null, posName: 'CAFE POS', 
@@ -554,11 +555,34 @@
                 state.isOfflineMode = true;
             }
 
-            auth.onAuthStateChanged((user) => {
+            auth.onAuthStateChanged(async (user) => {
                 state.user = user;
-                if (user) setupRealtimeListeners();
+                if (user) {
+                    if (!state.isOfflineMode) {
+                        try {
+                            const cartSnap = await db.collection('artifacts').doc('pos-app').collection('users').doc(user.uid).collection('cartData').doc('current').get();
+                            if (cartSnap.exists && cartSnap.data().items) {
+                                state.cart = cartSnap.data().items;
+                                window.renderCart();
+                            }
+                        } catch (e) {
+                            console.error("Gagal memuat keranjang tersimpan", e);
+                        }
+                    }
+                    setupRealtimeListeners();
+                }
             });
         }
+
+        window.saveCartToCloud = async () => {
+            if (!state.user || state.isOfflineMode) return;
+            try {
+                const cartRef = db.collection('artifacts').doc('pos-app').collection('users').doc(state.user.uid).collection('cartData').doc('current');
+                await cartRef.set({ items: state.cart });
+            } catch(e) {
+                console.error("Gagal menyimpan keranjang:", e);
+            }
+        };
 
         function setupRealtimeListeners() {
             const handleError = (e) => {
@@ -566,7 +590,7 @@
                 state.isOfflineMode = true;
             };
 
-            dbRef('settings').onSnapshot((snap) => {
+            publicDbRef('settings').onSnapshot((snap) => {
                 document.getElementById('loading-overlay').style.display = 'none';
                 const setDoc = snap.docs.find(d => d.id === 'general');
                 if (setDoc && setDoc.data().posName) {
@@ -576,27 +600,27 @@
                 }
             }, handleError);
 
-            dbRef('categories').onSnapshot((snap) => {
+            publicDbRef('categories').onSnapshot((snap) => {
                 if (snap.empty) {
                     const defaults = [{id:'cat1', name:'Minuman'}, {id:'cat2', name:'Makanan'}];
-                    defaults.forEach(c => dbRef('categories').doc(c.id).set(c));
+                    defaults.forEach(c => publicDbRef('categories').doc(c.id).set(c));
                 } else {
                     state.categories = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                     renderCategories(); renderCategoryTable();
                 }
             }, handleError);
 
-            dbRef('addonGroups').onSnapshot((snap) => {
+            publicDbRef('addonGroups').onSnapshot((snap) => {
                 state.addonGroups = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderAddonsTable();
             }, handleError);
 
-            dbRef('products').onSnapshot((snap) => {
+            publicDbRef('products').onSnapshot((snap) => {
                 state.products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderProducts(); renderProductsTable(); renderDashboard();
             }, handleError);
 
-            dbRef('history').onSnapshot((snap) => {
+            publicDbRef('history').onSnapshot((snap) => {
                 state.history = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => new Date(b.date) - new Date(a.date));
                 renderHistoryTable(); renderDashboard();
             }, handleError);
@@ -637,7 +661,6 @@
 
         window.setCategoryFilter = (catName) => { state.selectedCategory = catName; renderCategories(); renderProducts(); };
 
-        // --- NEW: Addon Groups Logic ---
         window.handleProductClick = (prodId) => {
             const prod = state.products.find(p => String(p.id) === String(prodId));
             if (!prod || prod.stock <= 0) return;
@@ -693,7 +716,6 @@
             const prodAddons = state.addonGroups.filter(ag => (prod.addonGroupIds || []).includes(ag.id));
             let isValid = true;
 
-            // Validate Single/Required Addons
             prodAddons.forEach(ag => {
                 if (ag.type === 'single') {
                     const selected = document.querySelector(`input[name="addon_grp_${ag.id}"]:checked`);
@@ -706,7 +728,6 @@
 
             if (!isValid) return;
 
-            // Collect all checked inputs
             const allChecked = document.querySelectorAll('.addon-input-val:checked');
             const selectedOptions = Array.from(allChecked).map(el => ({
                 groupName: el.dataset.group,
@@ -849,6 +870,7 @@
                 else return window.showNotification("Stok tidak mencukupi!", "error");
             }
             window.renderCart();
+            window.saveCartToCloud();
         };
 
         window.updateCartQty = (cartItemId, delta) => {
@@ -863,10 +885,20 @@
             if (newQ > 0) item.quantity = newQ;
             else if (newQ <= 0) state.cart = state.cart.filter(c => c.cartItemId !== cartItemId);
             window.renderCart();
+            window.saveCartToCloud();
         };
 
-        window.removeFromCart = (cartItemId) => { state.cart = state.cart.filter(c => c.cartItemId !== cartItemId); window.renderCart(); };
-        window.clearCart = () => { state.cart = []; window.renderCart(); };
+        window.removeFromCart = (cartItemId) => { 
+            state.cart = state.cart.filter(c => c.cartItemId !== cartItemId); 
+            window.renderCart(); 
+            window.saveCartToCloud(); 
+        };
+        
+        window.clearCart = () => { 
+            state.cart = []; 
+            window.renderCart(); 
+            window.saveCartToCloud(); 
+        };
 
         window.updateDashboardFilter = (val) => {
             state.dashboardFilterMonth = val;
@@ -944,7 +976,6 @@
             `).join('');
         }
 
-        // --- NEW: Render Add-on Groups Table ---
         function renderAddonsTable() {
             document.getElementById('addons-table-body').innerHTML = state.addonGroups.map(ag => {
                 const typeText = ag.type === 'single' ? '<span class="text-red-600 font-medium">Wajib Pilih 1 (Radio)</span>' : '<span class="text-blue-600 font-medium">Bisa Pilih Banyak (Checkbox)</span>';
@@ -1008,11 +1039,11 @@
                 for (const item of trx.items) {
                     const prod = state.products.find(p => String(p.id) === String(item.product.id));
                     if (prod) {
-                        try { await dbRef('products').doc(prod.id).update({ stock: Number(prod.stock) + Number(item.quantity) }); } catch(e){}
+                        try { await publicDbRef('products').doc(prod.id).update({ stock: Number(prod.stock) + Number(item.quantity) }); } catch(e){}
                     }
                 }
                 
-                await dbRef('history').doc(id).update({ status: 'VOID' });
+                await publicDbRef('history').doc(id).update({ status: 'VOID' });
                 window.showNotification("Transaksi berhasil di-VOID");
             } catch (err) { window.showNotification("Gagal melakukan VOID", "error"); }
         };
@@ -1025,7 +1056,6 @@
             });
         };
 
-        // --- Handle Product Form Checkboxes for Add-on Groups ---
         function renderProductAddonGroupCheckboxes(selectedIds = []) {
             const container = document.getElementById('prod-addon-groups-container');
             if (state.addonGroups.length === 0) {
@@ -1077,7 +1107,6 @@
             e.preventDefault();
             if(state.isOfflineMode) return window.showNotification("Offline mode. Hubungkan Firebase untuk menyimpan", "error");
 
-            // Kumpulkan id addon groups yang dicentang
             const checkedAg = document.querySelectorAll('.prod-ag-checkbox:checked');
             const addonGroupIds = Array.from(checkedAg).map(cb => cb.value);
 
@@ -1092,7 +1121,7 @@
                 addonGroupIds: addonGroupIds
             };
             try { 
-                await dbRef('products').doc(id).set(data); 
+                await publicDbRef('products').doc(id).set(data); 
                 window.showNotification("Menu disimpan!"); 
                 window.closeModals(); 
             } catch (err) { window.showNotification("Gagal menyimpan ke database", "error"); }
@@ -1100,7 +1129,7 @@
 
         window.deleteProduct = async (id) => {
             if(!confirm("Yakin ingin menghapus menu ini?")) return;
-            try { await dbRef('products').doc(id).delete(); window.showNotification("Menu dihapus"); } 
+            try { await publicDbRef('products').doc(id).delete(); window.showNotification("Menu dihapus"); } 
             catch (err) { window.showNotification("Gagal menghapus", "error"); }
         };
 
@@ -1130,17 +1159,16 @@
 
             const id = document.getElementById('cat-id').value || `cat_${Date.now()}`;
             const data = { id: id, name: document.getElementById('cat-name').value };
-            try { await dbRef('categories').doc(id).set(data); window.showNotification("Kategori disimpan!"); window.closeModals(); } 
+            try { await publicDbRef('categories').doc(id).set(data); window.showNotification("Kategori disimpan!"); window.closeModals(); } 
             catch (err) { window.showNotification("Gagal menyimpan", "error"); }
         };
 
         window.deleteCategory = async (id) => {
             if(!confirm("Yakin ingin menghapus kategori ini?")) return;
-            try { await dbRef('categories').doc(id).delete(); window.showNotification("Kategori dihapus"); } 
+            try { await publicDbRef('categories').doc(id).delete(); window.showNotification("Kategori dihapus"); } 
             catch (err) { window.showNotification("Gagal menghapus", "error"); }
         };
 
-        // --- NEW: ADD-ON GROUP EDIT LOGIC ---
         window.addOptionRow = (name = '', price = 0) => {
             const div = document.createElement('div');
             div.className = "flex gap-2 mb-2 option-row items-center";
@@ -1157,8 +1185,8 @@
             document.getElementById('addon-group-id').value = '';
             document.getElementById('addon-group-name').value = '';
             document.getElementById('addon-group-type').value = 'single';
-            document.getElementById('addon-options-container').innerHTML = ''; // Clear lama
-            window.addOptionRow(); // Beri 1 row kosong untuk diisi
+            document.getElementById('addon-options-container').innerHTML = ''; 
+            window.addOptionRow(); 
             document.getElementById('modal-addon-group').style.display = 'flex';
         };
 
@@ -1175,7 +1203,6 @@
                 const container = document.getElementById('addon-options-container');
                 container.innerHTML = '';
                 
-                // Isi ulang row dari data sebelumnya
                 ag.options.forEach(opt => {
                     window.addOptionRow(opt.name, opt.price);
                 });
@@ -1207,7 +1234,7 @@
             };
 
             try { 
-                await dbRef('addonGroups').doc(id).set(data); 
+                await publicDbRef('addonGroups').doc(id).set(data); 
                 window.showNotification("Grup Add-on disimpan!"); 
                 window.closeModals(); 
             } catch (err) { window.showNotification("Gagal menyimpan", "error"); }
@@ -1215,7 +1242,7 @@
 
         window.deleteAddonGroup = async (id) => {
             if(!confirm("Yakin ingin menghapus Grup Add-on ini?")) return;
-            try { await dbRef('addonGroups').doc(id).delete(); window.showNotification("Grup Add-on dihapus"); } 
+            try { await publicDbRef('addonGroups').doc(id).delete(); window.showNotification("Grup Add-on dihapus"); } 
             catch (err) { window.showNotification("Gagal menghapus", "error"); }
         };
 
@@ -1313,10 +1340,10 @@
 
             try {
                 if(!state.isOfflineMode) {
-                    await dbRef('history').doc(transaction.id).set(transaction);
+                    await publicDbRef('history').doc(transaction.id).set(transaction);
                     for (const item of state.cart) {
                         const prod = state.products.find(p => String(p.id) === String(item.product.id));
-                        if (prod) await dbRef('products').doc(prod.id).update({ stock: Number(prod.stock) - Number(item.quantity) });
+                        if (prod) await publicDbRef('products').doc(prod.id).update({ stock: Number(prod.stock) - Number(item.quantity) });
                     }
                 }
             } catch (err) { window.showNotification("Gagal sinkronisasi transaksi", "error"); }
@@ -1392,7 +1419,7 @@
         window.saveSettings = async (e) => {
             e.preventDefault();
             try {
-                await dbRef('settings').doc('general').set({ posName: document.getElementById('input-pos-name').value });
+                await publicDbRef('settings').doc('general').set({ posName: document.getElementById('input-pos-name').value });
                 window.showNotification("Nama POS diperbarui!");
             } catch (err) { window.showNotification("Gagal memperbarui", "error"); }
         };
