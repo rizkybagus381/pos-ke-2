@@ -72,6 +72,10 @@
             <button onclick="window.switchTab('addons')" id="tab-addons" class="nav-btn flex items-center justify-center lg:justify-start p-3 rounded-xl transition-colors text-indigo-200 hover:bg-indigo-800 hover:text-white">
                 <i class="ph ph-puzzle-piece text-xl md:text-2xl pointer-events-none"></i><span class="hidden lg:block ml-3 font-medium pointer-events-none">Add-on</span>
             </button>
+            <!-- NEW: Tab Voucher -->
+            <button onclick="window.switchTab('vouchers')" id="tab-vouchers" class="nav-btn flex items-center justify-center lg:justify-start p-3 rounded-xl transition-colors text-indigo-200 hover:bg-indigo-800 hover:text-white">
+                <i class="ph ph-ticket text-xl md:text-2xl pointer-events-none"></i><span class="hidden lg:block ml-3 font-medium pointer-events-none">Voucher</span>
+            </button>
             <button onclick="window.switchTab('history')" id="tab-history" class="nav-btn flex items-center justify-center lg:justify-start p-3 rounded-xl transition-colors text-indigo-200 hover:bg-indigo-800 hover:text-white">
                 <i class="ph ph-receipt text-xl md:text-2xl pointer-events-none"></i><span class="hidden lg:block ml-3 font-medium pointer-events-none">Riwayat</span>
             </button>
@@ -244,6 +248,29 @@
             </div>
         </div>
 
+        <!-- ================= VIEW: VOUCHERS ================= -->
+        <div id="view-vouchers" class="flex-1 p-4 md:p-8 bg-gray-50 overflow-y-auto" style="display: none;">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-xl md:text-2xl font-bold">Manajemen Voucher</h1>
+                <button onclick="window.openVoucherForm()" class="flex items-center gap-2 bg-indigo-600 text-white px-3 md:px-4 py-2 md:py-2.5 rounded-xl text-sm md:text-base font-medium shadow-sm hover:bg-indigo-700">
+                    <i class="ph ph-plus pointer-events-none"></i> <span class="hidden sm:inline">Tambah Voucher</span><span class="sm:hidden">Tambah</span>
+                </button>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto w-full">
+                <table class="w-full text-left min-w-[600px]">
+                    <thead class="bg-gray-50 border-b border-gray-100 text-gray-500 text-sm">
+                        <tr>
+                            <th class="p-4">Kode Promo</th>
+                            <th class="p-4">Diskon (%)</th>
+                            <th class="p-4">Status</th>
+                            <th class="p-4 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="vouchers-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- ================= VIEW: HISTORY ================= -->
         <div id="view-history" class="flex-1 p-4 md:p-8 bg-gray-50 overflow-y-auto" style="display: none;">
             <h1 class="text-xl md:text-2xl font-bold mb-6">Riwayat Transaksi</h1>
@@ -251,7 +278,7 @@
                 <table class="w-full text-left min-w-[800px]">
                     <thead class="bg-gray-50 border-b text-gray-500 text-sm">
                         <tr>
-                            <th class="p-4">ID Transaksi / Pelanggan</th>
+                            <th class="p-4">Kode Booking / ID</th>
                             <th class="p-4">Waktu</th>
                             <th class="p-4">Items</th>
                             <th class="p-4">Status</th>
@@ -413,6 +440,38 @@
         </div>
     </div>
 
+    <!-- NEW: Modal Form Voucher -->
+    <div id="modal-voucher" class="fixed inset-0 bg-black/50 backdrop-blur-sm items-center justify-center z-50 p-4 modal-enter" style="display: none;">
+        <div class="bg-white p-5 md:p-8 rounded-2xl shadow-2xl w-[95%] max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="modal-voucher-title" class="text-lg md:text-2xl font-bold">Tambah Voucher</h2>
+                <button type="button" onclick="window.closeModals()"><i class="ph ph-x text-xl md:text-2xl text-gray-400 hover:text-gray-800 pointer-events-none"></i></button>
+            </div>
+            <form onsubmit="window.submitVoucherForm(event)" class="space-y-4">
+                <input type="hidden" id="voucher-id" />
+                <div>
+                    <label class="block text-xs md:text-sm font-medium mb-1">Kode Voucher / Promo</label>
+                    <div class="flex gap-2">
+                        <input id="voucher-code" required placeholder="Contoh: PROMO50" class="flex-1 uppercase p-2.5 md:p-3 border rounded-xl outline-none focus:border-indigo-500 text-sm md:text-base font-bold tracking-widest text-indigo-700" />
+                        <button type="button" onclick="window.generateVoucherCode()" class="px-4 bg-indigo-100 text-indigo-700 font-bold rounded-xl hover:bg-indigo-200 text-xs md:text-sm whitespace-nowrap"><i class="ph-bold ph-arrows-clockwise mr-1"></i> Generate</button>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs md:text-sm font-medium mb-1">Diskon (%)</label>
+                    <input id="voucher-discount" type="number" min="1" max="100" required placeholder="Contoh: 15" class="w-full p-2.5 md:p-3 border rounded-xl outline-none focus:border-indigo-500 text-sm md:text-base" />
+                </div>
+                <div class="flex items-center gap-2 mt-4">
+                    <input type="checkbox" id="voucher-active" checked class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer" />
+                    <label for="voucher-active" class="text-sm font-medium text-gray-700 cursor-pointer">Voucher Aktif (Dapat digunakan)</label>
+                </div>
+                <div class="flex gap-3 md:gap-4 pt-3 md:pt-4 mt-4 border-t border-gray-100">
+                    <button type="button" onclick="window.closeModals()" class="flex-1 py-2.5 md:py-3 bg-gray-100 font-bold rounded-xl hover:bg-gray-200 text-sm md:text-base">Batal</button>
+                    <button type="submit" class="flex-1 py-2.5 md:py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 text-sm md:text-base">Simpan Voucher</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <!-- Modal Select Add-ons in POS -->
     <div id="modal-addon-select" class="fixed inset-0 bg-black/50 backdrop-blur-sm items-center justify-center z-50 p-4 modal-enter" style="display: none;">
         <div class="bg-white rounded-2xl shadow-2xl w-[95%] max-w-sm overflow-hidden flex flex-col max-h-[90vh]">
@@ -453,13 +512,13 @@
                 </div>
 
                 <div class="mb-4 bg-indigo-50/50 p-3 md:p-4 rounded-xl border border-indigo-100">
-                    <label class="block text-xs md:text-sm font-bold mb-2 text-indigo-900">Diskon (Opsional)</label>
-                    <div class="flex gap-2 mb-2">
-                        <button type="button" onclick="window.applyDiscount('percent', 50)" class="flex-1 py-2 bg-white border border-indigo-200 rounded-lg text-xs md:text-sm font-bold text-indigo-600 hover:bg-indigo-100 transition-colors">50%</button>
-                        <button type="button" onclick="window.applyDiscount('percent', 100)" class="flex-1 py-2 bg-white border border-indigo-200 rounded-lg text-xs md:text-sm font-bold text-indigo-600 hover:bg-indigo-100 transition-colors">100%</button>
-                        <button type="button" onclick="window.applyDiscount('clear', 0)" class="flex-1 py-2 bg-red-50 border border-red-200 rounded-lg text-xs md:text-sm font-bold text-red-600 hover:bg-red-100 transition-colors">Hapus</button>
+                    <label class="block text-xs md:text-sm font-bold mb-2 text-indigo-900">Kode Promo / Voucher</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="checkout-voucher-code" placeholder="Masukkan kode promo..." class="w-full uppercase p-2.5 md:p-3 border border-indigo-200 rounded-lg outline-none focus:border-indigo-500 text-sm md:text-base font-bold text-indigo-700" />
+                        <button type="button" onclick="window.applyVoucherKasir()" class="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-bold shadow-md hover:bg-indigo-700 transition-colors">Terapkan</button>
                     </div>
-                    <input type="text" id="checkout-discount" placeholder="Atau ketik nominal diskon (Rp)..." oninput="window.handleManualDiscount(event)" class="w-full p-2.5 md:p-3 border border-indigo-200 rounded-lg outline-none focus:border-indigo-500 text-sm md:text-base font-medium" />
+                    <!-- Tombol hapus voucher jika sudah ada diskon -->
+                    <button type="button" id="btn-clear-voucher" onclick="window.clearVoucherKasir()" class="mt-2 text-xs font-bold text-red-500 hover:text-red-700 hidden">Hapus Diskon</button>
                 </div>
 
                 <div class="mb-4">
@@ -520,12 +579,11 @@
         firebase.initializeApp(firebaseConfig);
         const auth = firebase.auth();
         const db = firebase.firestore();
-        const dbRef = (colName) => db.collection('artifacts').doc('pos-app').collection('users').doc(state.user.uid).collection(colName);
         const publicDbRef = (colName) => db.collection('artifacts').doc('pos-app').collection('public').doc('data').collection(colName);
 
         const state = {
             user: null, posName: 'CAFE POS', 
-            products: [], categories: [], addonGroups: [], history: [], cart: [], 
+            products: [], categories: [], addonGroups: [], vouchers: [], history: [], cart: [], 
             selectedCategory: 'Semua', paymentMethod: 'Cash', currentTransaction: null, printerDevice: null,
             isOfflineMode: false, dashboardFilterMonth: '', 
             tempPendingProduct: null, currentDiscount: 0
@@ -533,14 +591,7 @@
 
         const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(num) || 0);
 
-        // --- NEW: Taptic / Haptic Feedback Helper ---
-        window.playHaptic = () => {
-            try {
-                if (typeof navigator !== 'undefined' && navigator.vibrate) {
-                    navigator.vibrate(40); // 40ms short vibration untuk efek "Tap"
-                }
-            } catch(e) { } // Ignore on unsupported devices
-        };
+        window.playHaptic = () => { try { if (navigator.vibrate) navigator.vibrate(30); } catch(e){} };
 
         window.showNotification = (msg, type = 'success') => {
             const el = document.getElementById('notification');
@@ -580,31 +631,10 @@
             auth.onAuthStateChanged(async (user) => {
                 state.user = user;
                 if (user) {
-                    if (!state.isOfflineMode) {
-                        try {
-                            const cartSnap = await db.collection('artifacts').doc('pos-app').collection('users').doc(user.uid).collection('cartData').doc('current').get();
-                            if (cartSnap.exists && cartSnap.data().items) {
-                                state.cart = cartSnap.data().items;
-                                window.renderCart();
-                            }
-                        } catch (e) {
-                            console.error("Gagal memuat keranjang tersimpan", e);
-                        }
-                    }
                     setupRealtimeListeners();
                 }
             });
         }
-
-        window.saveCartToCloud = async () => {
-            if (!state.user || state.isOfflineMode) return;
-            try {
-                const cartRef = db.collection('artifacts').doc('pos-app').collection('users').doc(state.user.uid).collection('cartData').doc('current');
-                await cartRef.set({ items: state.cart });
-            } catch(e) {
-                console.error("Gagal menyimpan keranjang:", e);
-            }
-        };
 
         function setupRealtimeListeners() {
             const handleError = (e) => {
@@ -637,6 +667,12 @@
                 renderAddonsTable();
             }, handleError);
 
+            // NEW: Vouchers Listener
+            publicDbRef('vouchers').onSnapshot((snap) => {
+                state.vouchers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderVouchersTable();
+            }, handleError);
+
             publicDbRef('products').onSnapshot((snap) => {
                 state.products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderProducts(); renderProductsTable(); renderDashboard();
@@ -651,7 +687,7 @@
         window.switchTab = (tabId) => {
             window.playHaptic();
             window.closeModals();
-            const views = ['view-pos', 'view-waiting', 'view-dashboard', 'view-products', 'view-categories', 'view-addons', 'view-history', 'view-settings'];
+            const views = ['view-pos', 'view-waiting', 'view-dashboard', 'view-products', 'view-categories', 'view-addons', 'view-vouchers', 'view-history', 'view-settings'];
             views.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.style.display = 'none';
@@ -903,7 +939,6 @@
                 else return window.showNotification("Stok tidak mencukupi!", "error");
             }
             window.renderCart();
-            window.saveCartToCloud();
         };
 
         window.updateCartQty = (cartItemId, delta) => {
@@ -919,21 +954,18 @@
             if (newQ > 0) item.quantity = newQ;
             else if (newQ <= 0) state.cart = state.cart.filter(c => c.cartItemId !== cartItemId);
             window.renderCart();
-            window.saveCartToCloud();
         };
 
         window.removeFromCart = (cartItemId) => { 
             window.playHaptic();
             state.cart = state.cart.filter(c => c.cartItemId !== cartItemId); 
             window.renderCart(); 
-            window.saveCartToCloud(); 
         };
         
         window.clearCart = () => { 
             window.playHaptic();
             state.cart = []; 
             window.renderCart(); 
-            window.saveCartToCloud(); 
         };
 
         window.updateDashboardFilter = (val) => {
@@ -991,6 +1023,7 @@
 
             container.innerHTML = waitingOrders.map(t => {
                 const customer = t.customerName && t.customerName.trim() !== '' ? t.customerName : 'Customer / Meja ?';
+                const bcode = t.bookingCode || t.id.slice(-5).toUpperCase();
                 const itemsHtml = t.items.map(i => {
                     let addonText = '';
                     if (i.addons && i.addons.length > 0) {
@@ -1006,7 +1039,7 @@
                     <div class="p-3 md:p-4 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center">
                         <div class="flex-1 pr-2">
                             <h3 class="font-bold text-indigo-900 text-sm md:text-base truncate">${customer}</h3>
-                            <p class="text-[10px] md:text-xs text-indigo-600 font-medium">${new Date(t.date).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})} - ${t.id.slice(-6)}</p>
+                            <p class="text-[10px] md:text-xs text-indigo-600 font-medium">${new Date(t.date).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})} - KODE: <span class="font-bold text-red-500">${bcode}</span></p>
                         </div>
                         <span class="px-2 py-1 bg-orange-100 text-orange-600 text-[9px] md:text-[10px] font-bold rounded uppercase tracking-wider whitespace-nowrap">Menunggu</span>
                     </div>
@@ -1088,6 +1121,25 @@
             `}).join('');
         }
 
+        // --- NEW: VOUCHERS TABLE RENDER ---
+        function renderVouchersTable() {
+            document.getElementById('vouchers-table-body').innerHTML = state.vouchers.map(v => {
+                return `
+                <tr class="border-b hover:bg-gray-50 text-xs md:text-sm ${!v.isActive ? 'opacity-50' : ''}">
+                    <td class="p-3 md:p-4 font-black text-indigo-600 tracking-wider whitespace-nowrap">${v.code}</td>
+                    <td class="p-3 md:p-4 font-bold">${v.discountPercent}%</td>
+                    <td class="p-3 md:p-4">
+                        <button type="button" onclick="window.toggleVoucherStatus('${v.id}', ${!v.isActive})" class="px-2 py-1 text-[10px] font-bold rounded-full ${v.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}">
+                            ${v.isActive ? 'AKTIF' : 'TIDAK AKTIF'}
+                        </button>
+                    </td>
+                    <td class="p-3 md:p-4 text-right whitespace-nowrap">
+                        <button type="button" onclick="window.deleteVoucher('${v.id}')" class="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg"><i class="ph ph-trash text-base md:text-lg pointer-events-none"></i></button>
+                    </td>
+                </tr>
+            `}).join('');
+        }
+
         function renderHistoryTable() {
             document.getElementById('history-table-body').innerHTML = state.history.map(t => {
                 const isVoid = t.status === 'VOID';
@@ -1098,11 +1150,12 @@
                         : '<span class="bg-green-100 text-green-600 border border-green-200 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider">DONE</span>');
 
                 const customerMeta = t.customerName ? `<br><span class="text-[10px] text-gray-500 font-normal border bg-gray-100 px-1 py-0.5 rounded mt-1 inline-block"><i class="ph-fill ph-user mr-1"></i>${t.customerName}</span>` : '';
+                const bcode = t.bookingCode || t.id.slice(-5).toUpperCase();
                 return `
                 <tr class="border-b hover:bg-gray-50 text-xs md:text-sm ${isVoid ? 'bg-red-50/50 opacity-60' : ''}">
                     <td class="p-3 md:p-4 font-medium text-indigo-600 whitespace-nowrap">
                         <div class="flex items-center gap-2">
-                            <span class="${isVoid ? 'line-through text-gray-500' : ''}">${t.id}</span>
+                            <span class="${isVoid ? 'line-through text-gray-500' : ''}">${bcode}</span>
                             ${statusBadge}
                         </div>
                         ${customerMeta}
@@ -1152,7 +1205,7 @@
 
         window.closeModals = () => {
             window.playHaptic();
-            const modals = ['modal-product', 'modal-category', 'modal-addon-group', 'modal-checkout', 'modal-receipt', 'modal-addon-select'];
+            const modals = ['modal-product', 'modal-category', 'modal-addon-group', 'modal-voucher', 'modal-checkout', 'modal-receipt', 'modal-addon-select'];
             modals.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.style.display = 'none';
@@ -1362,11 +1415,69 @@
             catch (err) { window.showNotification("Gagal menghapus", "error"); }
         };
 
+        // --- NEW: VOUCHERS LOGIC ---
+        window.openVoucherForm = () => {
+            window.playHaptic();
+            document.getElementById('voucher-id').value = '';
+            document.getElementById('voucher-code').value = '';
+            document.getElementById('voucher-discount').value = '';
+            document.getElementById('voucher-active').checked = true;
+            document.getElementById('modal-voucher').style.display = 'flex';
+        };
+
+        window.generateVoucherCode = () => {
+            window.playHaptic();
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for(let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            document.getElementById('voucher-code').value = code;
+        };
+
+        window.submitVoucherForm = async (e) => {
+            e.preventDefault();
+            window.playHaptic();
+            if(state.isOfflineMode) return window.showNotification("Offline mode", "error");
+
+            const code = document.getElementById('voucher-code').value.trim().toUpperCase();
+            if(!code) return alert("Kode voucher wajib diisi");
+
+            const id = document.getElementById('voucher-id').value || `vch_${Date.now()}`;
+            const data = {
+                id: id,
+                code: code,
+                discountPercent: parseInt(document.getElementById('voucher-discount').value) || 0,
+                isActive: document.getElementById('voucher-active').checked
+            };
+
+            try {
+                await publicDbRef('vouchers').doc(id).set(data);
+                window.showNotification("Voucher disimpan!");
+                window.closeModals();
+            } catch (err) { window.showNotification("Gagal menyimpan", "error"); }
+        };
+
+        window.deleteVoucher = async (id) => {
+            window.playHaptic();
+            if(!confirm("Yakin ingin menghapus voucher ini?")) return;
+            try { await publicDbRef('vouchers').doc(id).delete(); window.showNotification("Voucher dihapus"); } 
+            catch (err) { window.showNotification("Gagal menghapus", "error"); }
+        };
+
+        window.toggleVoucherStatus = async (id, newStatus) => {
+            window.playHaptic();
+            try { await publicDbRef('vouchers').doc(id).update({ isActive: newStatus }); } 
+            catch (err) { window.showNotification("Gagal ubah status", "error"); }
+        };
+
+
         window.openCheckout = () => {
             window.playHaptic();
             try {
                 state.currentDiscount = 0;
-                document.getElementById('checkout-discount').value = '';
+                document.getElementById('checkout-voucher-code').value = '';
+                document.getElementById('btn-clear-voucher').classList.add('hidden');
                 
                 window.updateCheckoutTotalDisplay();
                 document.getElementById('cash-amount').value = '';
@@ -1389,25 +1500,35 @@
             document.getElementById('checkout-total-display').innerText = formatRp(total);
         };
 
-        window.applyDiscount = (type, val) => {
+        window.applyVoucherKasir = () => {
             window.playHaptic();
-            let subtotal = 0;
-            state.cart.forEach(item => subtotal += (getCartItemUnitPrice(item) * Number(item.quantity)));
-            
-            if (type === 'percent') {
-                state.currentDiscount = subtotal * (val / 100);
-                document.getElementById('checkout-discount').value = parseInt(state.currentDiscount).toLocaleString('id-ID');
-            } else if (type === 'clear') {
-                state.currentDiscount = 0;
-                document.getElementById('checkout-discount').value = '';
+            const codeInput = document.getElementById('checkout-voucher-code').value.trim().toUpperCase();
+            if(!codeInput) {
+                window.clearVoucherKasir();
+                return;
             }
-            window.updateCheckoutTotalDisplay();
+            
+            const voucher = state.vouchers.find(v => v.code === codeInput && v.isActive);
+            if(voucher) {
+                let subtotal = 0;
+                state.cart.forEach(item => subtotal += (getCartItemUnitPrice(item) * Number(item.quantity)));
+                
+                state.currentDiscount = subtotal * (voucher.discountPercent / 100);
+                window.updateCheckoutTotalDisplay();
+                
+                document.getElementById('btn-clear-voucher').classList.remove('hidden');
+                window.showNotification(`Voucher ${voucher.discountPercent}% berhasil diterapkan!`);
+            } else {
+                window.clearVoucherKasir();
+                window.showNotification("Kode voucher tidak valid atau tidak aktif", "error");
+            }
         };
 
-        window.handleManualDiscount = (e) => {
-            let val = e.target.value.replace(/[^0-9]/g, '');
-            e.target.value = val ? parseInt(val).toLocaleString('id-ID') : '';
-            state.currentDiscount = parseInt(val) || 0;
+        window.clearVoucherKasir = () => {
+            window.playHaptic();
+            state.currentDiscount = 0;
+            document.getElementById('checkout-voucher-code').value = '';
+            document.getElementById('btn-clear-voucher').classList.add('hidden');
             window.updateCheckoutTotalDisplay();
         };
 
@@ -1448,13 +1569,18 @@
             const transactionCustomer = document.getElementById('checkout-customer').value.trim(); 
             const transactionNotes = document.getElementById('checkout-notes').value.trim(); 
 
+            const transactionId = `TRX-${Date.now()}`;
+            const bookingCode = transactionId.slice(-5).toUpperCase();
+
             const transaction = {
-                id: `TRX-${Date.now()}`, date: new Date().toISOString(), items: state.cart,
+                id: transactionId, 
+                bookingCode: bookingCode,
+                date: new Date().toISOString(), items: state.cart,
                 subtotal: subtotal, discount: state.currentDiscount, tax: 0, total: total,
                 paymentMethod: state.paymentMethod, paymentAmount: paymentAmount,
                 change: state.paymentMethod === 'Cash' ? paymentAmount - total : 0,
                 status: 'SUCCESS',
-                fulfillmentStatus: 'WAITING', // NEW: Flag untuk masuk ke Waiting Order
+                fulfillmentStatus: 'DONE', // Kalau dari kasir langsung Done, atau bisa 'WAITING' (Disini asumsikan Done)
                 customerName: transactionCustomer,
                 notes: transactionNotes 
             };
@@ -1476,8 +1602,10 @@
         function openReceipt(trx) {
             document.getElementById('receipt-pos-name').innerText = state.posName;
             
+            const bcode = trx.bookingCode || trx.id.slice(-5).toUpperCase();
             let metaHTML = `
                 <div class="flex justify-between"><span>No:</span><span>${trx.id}</span></div>
+                <div class="flex justify-between font-bold text-red-500"><span>Kode:</span><span>${bcode}</span></div>
                 <div class="flex justify-between"><span>Tgl:</span><span>${new Date(trx.date).toLocaleString('id-ID')}</span></div>
             `;
 
