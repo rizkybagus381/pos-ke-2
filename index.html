@@ -53,7 +53,7 @@
             <span id="sidebar-pos-name" class="hidden lg:block ml-3 font-bold text-xl tracking-wider text-white truncate">CAFE POS</span>
         </div>
         
-        <nav class="flex-1 py-4 md:py-6 flex flex-col gap-2 px-2 md:px-3">
+        <nav class="flex-1 py-4 md:py-6 flex flex-col gap-2 px-2 md:px-3 overflow-y-auto scrollbar-hide">
             <button onclick="window.switchTab('pos')" id="tab-pos" class="nav-btn flex items-center justify-center lg:justify-start p-3 rounded-xl transition-colors bg-indigo-600 text-white shadow-lg">
                 <i class="ph ph-shopping-bag text-xl md:text-2xl pointer-events-none"></i><span class="hidden lg:block ml-3 font-medium pointer-events-none">Kasir</span>
             </button>
@@ -66,10 +66,14 @@
             <button onclick="window.switchTab('categories')" id="tab-categories" class="nav-btn flex items-center justify-center lg:justify-start p-3 rounded-xl transition-colors text-indigo-200 hover:bg-indigo-800 hover:text-white">
                 <i class="ph ph-list-dashes text-xl md:text-2xl pointer-events-none"></i><span class="hidden lg:block ml-3 font-medium pointer-events-none">Kategori</span>
             </button>
+            <!-- NEW: Add-on Tab -->
+            <button onclick="window.switchTab('addons')" id="tab-addons" class="nav-btn flex items-center justify-center lg:justify-start p-3 rounded-xl transition-colors text-indigo-200 hover:bg-indigo-800 hover:text-white">
+                <i class="ph ph-puzzle-piece text-xl md:text-2xl pointer-events-none"></i><span class="hidden lg:block ml-3 font-medium pointer-events-none">Add-on</span>
+            </button>
             <button onclick="window.switchTab('history')" id="tab-history" class="nav-btn flex items-center justify-center lg:justify-start p-3 rounded-xl transition-colors text-indigo-200 hover:bg-indigo-800 hover:text-white">
                 <i class="ph ph-receipt text-xl md:text-2xl pointer-events-none"></i><span class="hidden lg:block ml-3 font-medium pointer-events-none">Riwayat</span>
             </button>
-            <button onclick="window.switchTab('settings')" id="tab-settings" class="nav-btn flex items-center justify-center lg:justify-start p-3 rounded-xl transition-colors text-indigo-200 hover:bg-indigo-800 hover:text-white">
+            <button onclick="window.switchTab('settings')" id="tab-settings" class="nav-btn flex items-center justify-center lg:justify-start p-3 rounded-xl transition-colors text-indigo-200 hover:bg-indigo-800 hover:text-white mt-auto">
                 <i class="ph ph-gear text-xl md:text-2xl pointer-events-none"></i><span class="hidden lg:block ml-3 font-medium pointer-events-none">Pengaturan</span>
             </button>
         </nav>
@@ -209,6 +213,24 @@
             </div>
         </div>
 
+        <!-- ================= VIEW: ADD-ONS ================= -->
+        <div id="view-addons" class="flex-1 p-4 md:p-8 bg-gray-50 overflow-y-auto" style="display: none;">
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-xl md:text-2xl font-bold">Manajemen Add-on</h1>
+                <button onclick="window.openAddonForm()" class="flex items-center gap-2 bg-indigo-600 text-white px-3 md:px-4 py-2 md:py-2.5 rounded-xl text-sm md:text-base font-medium shadow-sm hover:bg-indigo-700">
+                    <i class="ph ph-plus pointer-events-none"></i> <span class="hidden sm:inline">Tambah Add-on</span><span class="sm:hidden">Tambah</span>
+                </button>
+            </div>
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto w-full max-w-2xl">
+                <table class="w-full text-left min-w-[400px]">
+                    <thead class="bg-gray-50 border-b border-gray-100 text-gray-500 text-sm">
+                        <tr><th class="p-4">Nama Add-on</th><th class="p-4">Harga Tambahan</th><th class="p-4 text-right">Aksi</th></tr>
+                    </thead>
+                    <tbody id="addons-table-body"></tbody>
+                </table>
+            </div>
+        </div>
+
         <!-- ================= VIEW: HISTORY ================= -->
         <div id="view-history" class="flex-1 p-4 md:p-8 bg-gray-50 overflow-y-auto" style="display: none;">
             <h1 class="text-xl md:text-2xl font-bold mb-6">Riwayat Transaksi</h1>
@@ -216,7 +238,7 @@
                 <table class="w-full text-left min-w-[700px]">
                     <thead class="bg-gray-50 border-b text-gray-500 text-sm">
                         <tr>
-                            <th class="p-4">ID Transaksi</th>
+                            <th class="p-4">ID Transaksi / Pelanggan</th>
                             <th class="p-4">Waktu</th>
                             <th class="p-4">Items</th>
                             <th class="p-4">Metode</th>
@@ -298,11 +320,10 @@
                     <input id="prod-image" type="url" placeholder="https://..." class="w-full p-2.5 md:p-3 border rounded-xl outline-none focus:border-indigo-500 text-sm md:text-base" />
                 </div>
                 
-                <!-- NEW: Toggle for Hot / Iced Addon -->
                 <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 md:p-4 mt-2">
                     <label class="flex items-center text-xs md:text-sm font-medium text-indigo-900 cursor-pointer">
-                        <input type="checkbox" id="prod-has-temp" class="mr-3 w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500" />
-                        Menu ini memiliki pilihan varian "Hot" atau "Iced"
+                        <input type="checkbox" id="prod-has-addons" class="mr-3 w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500" />
+                        Tampilkan pop-up pilihan Add-on untuk menu ini
                     </label>
                 </div>
 
@@ -335,23 +356,46 @@
         </div>
     </div>
 
-    <!-- NEW: Modal Select Variant (Hot / Iced) -->
-    <div id="modal-variant" class="fixed inset-0 bg-black/50 backdrop-blur-sm items-center justify-center z-50 p-4 modal-enter" style="display: none;">
-        <div class="bg-white rounded-2xl shadow-2xl w-[95%] max-w-sm overflow-hidden text-center">
-            <div class="p-6">
-                <h2 class="text-lg md:text-xl font-bold mb-2 text-gray-800">Pilih Varian</h2>
-                <p id="variant-prod-name" class="text-gray-500 mb-6 text-sm md:text-base">Nama Produk</p>
-                <div class="grid grid-cols-2 gap-4">
-                    <button type="button" onclick="window.selectVariant('Hot')" class="py-4 border-2 border-red-500 text-red-600 rounded-xl font-bold hover:bg-red-50 transition-colors flex flex-col items-center gap-2">
-                        <i class="ph-fill ph-fire text-2xl md:text-3xl pointer-events-none"></i> Hot
-                    </button>
-                    <button type="button" onclick="window.selectVariant('Iced')" class="py-4 border-2 border-blue-500 text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition-colors flex flex-col items-center gap-2">
-                        <i class="ph-fill ph-snowflake text-2xl md:text-3xl pointer-events-none"></i> Iced
-                    </button>
-                </div>
+    <!-- Modal Form Add-on -->
+    <div id="modal-addon" class="fixed inset-0 bg-black/50 backdrop-blur-sm items-center justify-center z-50 p-4 modal-enter" style="display: none;">
+        <div class="bg-white p-5 md:p-8 rounded-2xl shadow-2xl w-[95%] max-w-md max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-6">
+                <h2 id="modal-addon-title" class="text-lg md:text-2xl font-bold">Tambah Add-on</h2>
+                <button type="button" onclick="window.closeModals()"><i class="ph ph-x text-xl md:text-2xl text-gray-400 hover:text-gray-800 pointer-events-none"></i></button>
             </div>
-            <div class="p-4 bg-gray-50 border-t">
-                <button type="button" onclick="window.closeVariantModal()" class="w-full py-2.5 md:py-3 bg-white border font-bold rounded-xl text-gray-600 hover:bg-gray-100 text-sm md:text-base">Batal</button>
+            <form onsubmit="window.submitAddonForm(event)" class="space-y-4">
+                <input type="hidden" id="addon-id" />
+                <div>
+                    <label class="block text-xs md:text-sm font-medium mb-1">Nama Add-on</label>
+                    <input id="addon-name" required placeholder="Contoh: Ekstra Shot / Es / Boba" class="w-full p-2.5 md:p-3 border rounded-xl outline-none focus:border-indigo-500 text-sm md:text-base" />
+                </div>
+                <div>
+                    <label class="block text-xs md:text-sm font-medium mb-1">Harga Tambahan (Rp)</label>
+                    <input id="addon-price" type="number" min="0" required placeholder="Isi 0 jika gratis" class="w-full p-2.5 md:p-3 border rounded-xl outline-none focus:border-indigo-500 text-sm md:text-base" />
+                </div>
+                <div class="flex gap-3 md:gap-4 pt-3 md:pt-4 mt-4 border-t border-gray-100">
+                    <button type="button" onclick="window.closeModals()" class="flex-1 py-2.5 md:py-3 bg-gray-100 font-bold rounded-xl hover:bg-gray-200 text-sm md:text-base">Batal</button>
+                    <button type="submit" class="flex-1 py-2.5 md:py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 text-sm md:text-base">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Select Add-ons -->
+    <div id="modal-addon-select" class="fixed inset-0 bg-black/50 backdrop-blur-sm items-center justify-center z-50 p-4 modal-enter" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-2xl w-[95%] max-w-sm overflow-hidden text-center flex flex-col max-h-[90vh]">
+            <div class="p-6 pb-2">
+                <h2 class="text-lg md:text-xl font-bold mb-1 text-gray-800">Opsi Tambahan</h2>
+                <p id="variant-prod-name" class="text-gray-500 text-sm md:text-base mb-4 font-medium">Nama Produk</p>
+            </div>
+            
+            <div id="addon-list-container" class="px-6 space-y-2 mb-4 overflow-y-auto text-left flex-1">
+                <!-- Checkboxes dynamically added here -->
+            </div>
+
+            <div class="p-4 bg-gray-50 border-t flex gap-2">
+                <button type="button" onclick="window.closeVariantModal()" class="flex-1 py-2.5 md:py-3 bg-white border border-gray-300 font-bold rounded-xl text-gray-600 hover:bg-gray-100 text-sm md:text-base">Batal</button>
+                <button type="button" onclick="window.confirmAddonSelection()" class="flex-1 py-2.5 md:py-3 bg-indigo-600 font-bold rounded-xl text-white hover:bg-indigo-700 text-sm md:text-base">Tambahkan</button>
             </div>
         </div>
     </div>
@@ -376,10 +420,15 @@
                         class="w-full p-3 md:p-4 mb-4 md:mb-6 text-lg md:text-xl font-bold border-2 rounded-xl focus:border-indigo-600 outline-none" autofocus />
                 </div>
 
-                <!-- NEW: Checkout Notes -->
+                <!-- NEW: Customer Name / Table Number -->
+                <div class="mb-4">
+                    <label class="block text-xs md:text-sm font-medium mb-1 text-gray-700">Atas Nama / No. Meja (Opsional)</label>
+                    <input type="text" id="checkout-customer" class="w-full p-2.5 md:p-3 border rounded-xl outline-none focus:border-indigo-500 text-sm md:text-base bg-gray-50" placeholder="Contoh: Meja 4 / Budi" />
+                </div>
+
                 <div class="mb-6">
                     <label class="block text-xs md:text-sm font-medium mb-1 text-gray-700">Catatan Pesanan (Opsional)</label>
-                    <textarea id="checkout-notes" rows="2" class="w-full p-2.5 md:p-3 border rounded-xl outline-none focus:border-indigo-500 text-sm md:text-base bg-gray-50" placeholder="Tambahkan catatan untuk pesanan..."></textarea>
+                    <textarea id="checkout-notes" rows="2" class="w-full p-2.5 md:p-3 border rounded-xl outline-none focus:border-indigo-500 text-sm md:text-base bg-gray-50" placeholder="Tambahkan catatan..."></textarea>
                 </div>
 
                 <button type="button" onclick="window.processCheckout()" class="w-full py-3.5 md:py-4 bg-indigo-600 text-white rounded-xl font-bold text-base md:text-lg hover:bg-indigo-700 flex justify-center gap-2">
@@ -397,10 +446,15 @@
                     <h2 id="receipt-pos-name" class="text-lg md:text-xl font-black uppercase">CAFE POS</h2>
                     <p class="text-[10px] md:text-xs text-gray-500">Struk Pembayaran</p>
                 </div>
+                
                 <div class="text-[10px] md:text-xs border-t border-b border-dashed border-gray-400 py-2 mb-3" id="receipt-meta"></div>
-                <div class="text-xs md:text-sm space-y-2 mb-3" id="receipt-items"></div>
-                <!-- NEW: Receipt Notes Output -->
+                
+                <!-- NEW: Items -->
+                <div class="text-xs md:text-sm space-y-3 mb-3" id="receipt-items"></div>
+                
+                <!-- Notes Output -->
                 <div id="receipt-notes"></div>
+                
                 <div class="text-xs md:text-sm border-t border-dashed border-gray-400 pt-3 space-y-1" id="receipt-summary"></div>
                 <div class="text-center text-[10px] md:text-xs mt-6 font-medium">Terima Kasih Atas Kunjungan Anda!</div>
             </div>
@@ -431,13 +485,13 @@
         const dbRef = (colName) => db.collection('artifacts').doc('pos-app').collection('public').doc('data').collection(colName);
 
         const state = {
-            user: null, posName: 'CAFE POS', products: [], categories: [],
-            history: [], cart: [], selectedCategory: 'Semua',
-            paymentMethod: 'Cash', currentTransaction: null, printerDevice: null,
-            isOfflineMode: false, dashboardFilterMonth: '', tempPendingProduct: null
+            user: null, posName: 'CAFE POS', 
+            products: [], categories: [], addons: [], history: [], cart: [], 
+            selectedCategory: 'Semua', paymentMethod: 'Cash', currentTransaction: null, printerDevice: null,
+            isOfflineMode: false, dashboardFilterMonth: '', 
+            tempPendingProduct: null, tempSelectedAddons: []
         };
 
-        // Format Rupiah
         const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(num) || 0);
 
         window.showNotification = (msg, type = 'success') => {
@@ -508,6 +562,11 @@
                 }
             }, handleError);
 
+            dbRef('addons').onSnapshot((snap) => {
+                state.addons = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+                renderAddonsTable();
+            }, handleError);
+
             dbRef('products').onSnapshot((snap) => {
                 state.products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderProducts(); renderProductsTable(); renderDashboard();
@@ -521,7 +580,7 @@
 
         window.switchTab = (tabId) => {
             window.closeModals();
-            const views = ['view-pos', 'view-dashboard', 'view-products', 'view-categories', 'view-history', 'view-settings'];
+            const views = ['view-pos', 'view-dashboard', 'view-products', 'view-categories', 'view-addons', 'view-history', 'view-settings'];
             views.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.style.display = 'none';
@@ -554,32 +613,74 @@
 
         window.setCategoryFilter = (catName) => { state.selectedCategory = catName; renderCategories(); renderProducts(); };
 
-        // --- NEW: Addon Variant Logic for Clicking Product ---
+        // --- NEW: Dynamic Add-ons Logic ---
         window.handleProductClick = (prodId) => {
             const prod = state.products.find(p => String(p.id) === String(prodId));
             if (!prod || prod.stock <= 0) return;
             
-            if (prod.hasTemperature) {
+            if (prod.hasAddons) {
                 state.tempPendingProduct = prod;
+                state.tempSelectedAddons = [];
                 document.getElementById('variant-prod-name').innerText = prod.name;
-                document.getElementById('modal-variant').style.display = 'flex';
+                
+                const container = document.getElementById('addon-list-container');
+                if (state.addons.length === 0) {
+                    container.innerHTML = '<p class="text-sm text-gray-500 text-center py-4">Belum ada Add-on terdaftar di pengaturan.</p>';
+                } else {
+                    container.innerHTML = state.addons.map(a => `
+                        <label class="flex items-center justify-between p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors mb-2">
+                            <div class="flex items-center">
+                                <input type="checkbox" value="${a.id}" onchange="window.toggleTempAddon('${a.id}', '${a.name}', ${a.price}, this.checked)" class="w-4 h-4 md:w-5 md:h-5 text-indigo-600 rounded border-gray-300 focus:ring-indigo-500 mr-3">
+                                <span class="text-sm md:text-base font-medium text-gray-700">${a.name}</span>
+                            </div>
+                            <span class="text-xs md:text-sm font-bold text-gray-500">${a.price > 0 ? '+ ' + formatRp(a.price) : 'Gratis'}</span>
+                        </label>
+                    `).join('');
+                }
+
+                document.getElementById('modal-addon-select').style.display = 'flex';
             } else {
-                window.addToCart(prodId, '');
+                window.addToCart(prodId, []);
+            }
+        };
+
+        window.toggleTempAddon = (id, name, price, isChecked) => {
+            if (isChecked) {
+                state.tempSelectedAddons.push({ id, name, price: Number(price) });
+            } else {
+                state.tempSelectedAddons = state.tempSelectedAddons.filter(a => a.id !== id);
             }
         };
 
         window.closeVariantModal = () => {
-            document.getElementById('modal-variant').style.display = 'none';
+            document.getElementById('modal-addon-select').style.display = 'none';
             state.tempPendingProduct = null;
+            state.tempSelectedAddons = [];
         };
 
-        window.selectVariant = (variant) => {
+        window.confirmAddonSelection = () => {
             if (state.tempPendingProduct) {
-                window.addToCart(state.tempPendingProduct.id, variant);
+                window.addToCart(state.tempPendingProduct.id, state.tempSelectedAddons);
                 window.closeVariantModal();
             }
         };
 
+        // --- Helper for Cart ---
+        const getCartItemUnitPrice = (item) => {
+            const addonTotal = (item.addons || []).reduce((sum, a) => sum + Number(a.price), 0);
+            return Number(item.product.price) + addonTotal;
+        };
+
+        const areAddonsEqual = (a1, a2) => {
+            if (!a1 && !a2) return true;
+            if (!a1 || !a2) return false;
+            if (a1.length !== a2.length) return false;
+            const ids1 = a1.map(a => a.id).sort();
+            const ids2 = a2.map(a => a.id).sort();
+            return ids1.every((id, idx) => id === ids2[idx]);
+        };
+
+        // --- Core Updates ---
         window.renderProducts = () => {
             const searchInput = document.getElementById('search-input');
             const searchQ = searchInput ? searchInput.value.toLowerCase() : '';
@@ -603,7 +704,7 @@
                         <img src="${p.image}" class="w-full h-full object-cover group-hover:scale-105 transition-transform pointer-events-none" onerror="this.src='https://via.placeholder.com/200x200?text=No+Image'" />
                         ${isOut ? '<div class="absolute inset-0 bg-black/50 flex items-center justify-center"><span class="bg-red-500 text-white px-2 py-1 md:px-3 text-xs md:text-sm rounded-lg font-bold">Habis</span></div>' : ''}
                         <div class="absolute top-2 right-2 bg-white/90 px-1.5 py-0.5 md:px-2 md:py-1 rounded-md md:rounded-lg shadow-sm text-[10px] md:text-xs font-bold text-indigo-700">Stok: ${p.stock}</div>
-                        ${p.hasTemperature && !isOut ? '<div class="absolute bottom-2 left-2 bg-indigo-600/90 text-white px-1.5 py-0.5 rounded shadow-sm text-[9px] md:text-[10px] font-bold uppercase tracking-widest"><i class="ph-fill ph-asterisk pointer-events-none"></i> Opsi</div>' : ''}
+                        ${p.hasAddons && !isOut ? '<div class="absolute bottom-2 left-2 bg-indigo-600/90 text-white px-1.5 py-0.5 rounded shadow-sm text-[9px] md:text-[10px] font-bold uppercase tracking-widest"><i class="ph-fill ph-plus-circle pointer-events-none"></i> Add-on</div>' : ''}
                     </div>
                     <div class="p-2.5 md:p-4 flex-1 flex flex-col justify-between pointer-events-none">
                         <div><p class="text-[10px] md:text-xs text-gray-500 mb-0.5">${p.category}</p><h3 class="font-semibold text-gray-800 text-xs md:text-sm leading-tight line-clamp-2">${p.name}</h3></div>
@@ -634,12 +735,10 @@
 
             let subtotal = 0;
             container.innerHTML = state.cart.map(item => {
-                subtotal += (Number(item.product.price) * Number(item.quantity));
+                const unitPrice = getCartItemUnitPrice(item);
+                subtotal += (unitPrice * Number(item.quantity));
                 
-                // Show Hot or Iced variant
-                const varBadge = item.variant 
-                    ? `<span class="text-[10px] px-1.5 py-0.5 rounded-md font-bold ml-1 ${item.variant === 'Hot' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}">${item.variant}</span>` 
-                    : '';
+                const addonsBadge = (item.addons || []).map(a => `<span class="text-[9px] md:text-[10px] px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 font-bold mr-1 mb-1 inline-block">${a.name}</span>`).join('');
 
                 return `
                 <div class="flex gap-2 md:gap-3 bg-gray-50 p-2 md:p-3 rounded-xl border border-gray-100">
@@ -647,24 +746,24 @@
                     <div class="flex-1 flex flex-col justify-between">
                         <div class="flex justify-between items-start">
                             <div class="flex-1 pr-1">
-                                <h4 class="font-medium text-xs md:text-sm text-gray-800 leading-tight inline">${item.product.name}</h4>
-                                ${varBadge}
+                                <h4 class="font-medium text-xs md:text-sm text-gray-800 leading-tight inline block mb-1">${item.product.name}</h4>
+                                <div class="flex flex-wrap mt-0.5">${addonsBadge}</div>
                             </div>
-                            <button onclick="window.removeFromCart('${item.product.id}', '${item.variant || ''}')" class="text-gray-400 hover:text-red-500 ml-2"><i class="ph ph-trash pointer-events-none"></i></button>
+                            <button onclick="window.removeFromCart('${item.cartItemId}')" class="text-gray-400 hover:text-red-500 ml-2"><i class="ph ph-trash pointer-events-none"></i></button>
                         </div>
-                        <div class="flex justify-between items-center mt-1 md:mt-2">
-                            <span class="font-bold text-indigo-600 text-xs md:text-sm">${formatRp(item.product.price)}</span>
+                        <div class="flex justify-between items-center mt-2">
+                            <span class="font-bold text-indigo-600 text-xs md:text-sm">${formatRp(unitPrice)}</span>
                             <div class="flex items-center gap-1 md:gap-2 bg-white rounded-lg border border-gray-200">
-                                <button onclick="window.updateCartQty('${item.product.id}', '${item.variant || ''}', -1)" class="p-1 text-gray-600 hover:bg-gray-100"><i class="ph ph-minus pointer-events-none text-xs md:text-base"></i></button>
+                                <button onclick="window.updateCartQty('${item.cartItemId}', -1)" class="p-1 text-gray-600 hover:bg-gray-100"><i class="ph ph-minus pointer-events-none text-xs md:text-base"></i></button>
                                 <span class="w-5 md:w-6 text-center font-medium text-xs md:text-sm">${item.quantity}</span>
-                                <button onclick="window.updateCartQty('${item.product.id}', '${item.variant || ''}', 1)" class="p-1 text-gray-600 hover:bg-gray-100"><i class="ph ph-plus pointer-events-none text-xs md:text-base"></i></button>
+                                <button onclick="window.updateCartQty('${item.cartItemId}', 1)" class="p-1 text-gray-600 hover:bg-gray-100"><i class="ph ph-plus pointer-events-none text-xs md:text-base"></i></button>
                             </div>
                         </div>
                     </div>
                 </div>`;
             }).join('');
 
-            const total = subtotal; // Tanpa PPN
+            const total = subtotal;
 
             document.getElementById('cart-subtotal').innerText = formatRp(subtotal);
             document.getElementById('cart-total').innerText = formatRp(total);
@@ -677,46 +776,40 @@
             btnBayar.style.pointerEvents = 'auto';
         };
 
-        window.addToCart = (prodId, variant = '') => {
+        window.addToCart = (prodId, addons = []) => {
             const product = state.products.find(p => String(p.id) === String(prodId));
             if (!product) return;
-            const exist = state.cart.find(c => String(c.product.id) === String(prodId) && (c.variant || '') === variant);
             
-            // Perhatikan ketersediaan stok
             const totalQtySameProduct = state.cart.filter(c => String(c.product.id) === String(prodId)).reduce((sum, item) => sum + item.quantity, 0);
+            const exist = state.cart.find(c => String(c.product.id) === String(prodId) && areAddonsEqual(c.addons, addons));
             
             if (exist) { 
                 if (totalQtySameProduct < Number(product.stock)) exist.quantity++; 
                 else return window.showNotification("Stok tidak mencukupi!", "error");
             } else { 
-                if (totalQtySameProduct < Number(product.stock)) state.cart.push({ product, quantity: 1, variant }); 
+                if (totalQtySameProduct < Number(product.stock)) {
+                    state.cart.push({ cartItemId: Date.now().toString() + Math.random().toString(36).substr(2, 5), product, quantity: 1, addons: [...addons] }); 
+                }
                 else return window.showNotification("Stok tidak mencukupi!", "error");
             }
             window.renderCart();
         };
 
-        window.updateCartQty = (prodId, variant, delta) => {
-            const item = state.cart.find(c => String(c.product.id) === String(prodId) && (c.variant || '') === variant);
+        window.updateCartQty = (cartItemId, delta) => {
+            const item = state.cart.find(c => c.cartItemId === cartItemId);
             if (!item) return;
             
-            const totalQtySameProduct = state.cart.filter(c => String(c.product.id) === String(prodId)).reduce((sum, it) => sum + it.quantity, 0);
-
+            const totalQtySameProduct = state.cart.filter(c => String(c.product.id) === String(item.product.id)).reduce((sum, it) => sum + it.quantity, 0);
             const newQ = item.quantity + delta;
             
-            if (delta > 0 && totalQtySameProduct >= Number(item.product.stock)) {
-                return window.showNotification("Stok habis!", "error");
-            }
+            if (delta > 0 && totalQtySameProduct >= Number(item.product.stock)) return window.showNotification("Stok habis!", "error");
 
             if (newQ > 0) item.quantity = newQ;
-            else if (newQ <= 0) state.cart = state.cart.filter(c => !(String(c.product.id) === String(prodId) && (c.variant || '') === variant));
+            else if (newQ <= 0) state.cart = state.cart.filter(c => c.cartItemId !== cartItemId);
             window.renderCart();
         };
 
-        window.removeFromCart = (prodId, variant) => { 
-            state.cart = state.cart.filter(c => !(String(c.product.id) === String(prodId) && (c.variant || '') === variant)); 
-            window.renderCart(); 
-        };
-        
+        window.removeFromCart = (cartItemId) => { state.cart = state.cart.filter(c => c.cartItemId !== cartItemId); window.renderCart(); };
         window.clearCart = () => { state.cart = []; window.renderCart(); };
 
         window.updateDashboardFilter = (val) => {
@@ -769,7 +862,7 @@
                         <img src="${p.image}" class="w-8 h-8 md:w-10 md:h-10 rounded-lg object-cover pointer-events-none" onerror="this.src='https://via.placeholder.com/200x200?text=No+Image'" />
                         <div>
                             <span class="font-medium whitespace-normal block">${p.name}</span>
-                            ${p.hasTemperature ? '<span class="text-[9px] md:text-[10px] bg-indigo-100 text-indigo-700 font-bold px-1.5 rounded mt-0.5 inline-block">Ada opsi varian</span>' : ''}
+                            ${p.hasAddons ? '<span class="text-[9px] md:text-[10px] bg-indigo-100 text-indigo-700 font-bold px-1.5 py-0.5 rounded mt-0.5 inline-block">Memakai Add-on</span>' : ''}
                         </div>
                     </td>
                     <td class="p-3 md:p-4"><span class="bg-gray-100 text-gray-600 px-2 py-1 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium whitespace-nowrap">${p.category}</span></td>
@@ -795,9 +888,23 @@
             `).join('');
         }
 
+        function renderAddonsTable() {
+            document.getElementById('addons-table-body').innerHTML = state.addons.map(a => `
+                <tr class="border-b hover:bg-gray-50 text-xs md:text-sm">
+                    <td class="p-3 md:p-4 font-medium text-gray-800">${a.name}</td>
+                    <td class="p-3 md:p-4 text-gray-600 font-medium">+ ${formatRp(a.price)}</td>
+                    <td class="p-3 md:p-4 text-right whitespace-nowrap">
+                        <button type="button" onclick="window.editAddon('${a.id}')" class="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg mr-1"><i class="ph ph-pencil-simple text-base md:text-lg pointer-events-none"></i></button>
+                        <button type="button" onclick="window.deleteAddon('${a.id}')" class="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg"><i class="ph ph-trash text-base md:text-lg pointer-events-none"></i></button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
         function renderHistoryTable() {
             document.getElementById('history-table-body').innerHTML = state.history.map(t => {
                 const isVoid = t.status === 'VOID';
+                const customerMeta = t.customerName ? `<br><span class="text-[10px] text-gray-500 font-normal border bg-gray-100 px-1 py-0.5 rounded mt-1 inline-block"><i class="ph-fill ph-user mr-1"></i>${t.customerName}</span>` : '';
                 return `
                 <tr class="border-b hover:bg-gray-50 text-xs md:text-sm ${isVoid ? 'bg-red-50/50 opacity-60' : ''}">
                     <td class="p-3 md:p-4 font-medium text-indigo-600 whitespace-nowrap">
@@ -805,6 +912,7 @@
                             <span class="${isVoid ? 'line-through text-gray-500' : ''}">${t.id}</span>
                             ${isVoid ? '<span class="bg-red-500 text-white px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider">VOID</span>' : ''}
                         </div>
+                        ${customerMeta}
                     </td>
                     <td class="p-3 md:p-4 whitespace-nowrap ${isVoid ? 'line-through text-gray-500' : ''}">${new Date(t.date).toLocaleString('id-ID')}</td>
                     <td class="p-3 md:p-4 whitespace-nowrap ${isVoid ? 'line-through text-gray-500' : ''}">${t.items.reduce((acc, it) => acc + it.quantity, 0)} Pcs</td>
@@ -848,7 +956,7 @@
         };
 
         window.closeModals = () => {
-            const modals = ['modal-product', 'modal-category', 'modal-checkout', 'modal-receipt', 'modal-variant'];
+            const modals = ['modal-product', 'modal-category', 'modal-addon', 'modal-checkout', 'modal-receipt', 'modal-addon-select'];
             modals.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.style.display = 'none';
@@ -862,7 +970,7 @@
             document.getElementById('prod-price').value = '';
             document.getElementById('prod-stock').value = '';
             document.getElementById('prod-image').value = '';
-            document.getElementById('prod-has-temp').checked = false; // Default false
+            document.getElementById('prod-has-addons').checked = false; // Default false
             document.getElementById('modal-product').style.display = 'flex';
         };
 
@@ -878,7 +986,7 @@
                 document.getElementById('prod-price').value = p.price;
                 document.getElementById('prod-stock').value = p.stock;
                 document.getElementById('prod-image').value = p.image || '';
-                document.getElementById('prod-has-temp').checked = p.hasTemperature || false; // Load existing setting
+                document.getElementById('prod-has-addons').checked = p.hasAddons || false; // Load existing setting
                 
                 document.getElementById('modal-product').style.display = 'flex';
             } catch(e) { console.error(e); alert("Terjadi kesalahan."); }
@@ -896,7 +1004,7 @@
                 price: parseInt(document.getElementById('prod-price').value) || 0, 
                 stock: parseInt(document.getElementById('prod-stock').value) || 0,
                 image: document.getElementById('prod-image').value || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=200',
-                hasTemperature: document.getElementById('prod-has-temp').checked // Save boolean status
+                hasAddons: document.getElementById('prod-has-addons').checked // Save boolean status
             };
             try { 
                 await dbRef('products').doc(id).set(data); 
@@ -947,13 +1055,60 @@
             catch (err) { window.showNotification("Gagal menghapus", "error"); }
         };
 
+        // --- NEW: ADD-ON CRUD LOGIC ---
+        window.openAddonForm = () => {
+            document.getElementById('modal-addon-title').innerText = "Tambah Add-on";
+            document.getElementById('addon-id').value = '';
+            document.getElementById('addon-name').value = '';
+            document.getElementById('addon-price').value = '0';
+            document.getElementById('modal-addon').style.display = 'flex';
+        };
+
+        window.editAddon = (id) => {
+            try {
+                const a = state.addons.find(x => String(x.id) === String(id).trim());
+                if(!a) return alert("Error: Add-on tidak ditemukan.");
+                
+                document.getElementById('modal-addon-title').innerText = "Edit Add-on";
+                document.getElementById('addon-id').value = a.id;
+                document.getElementById('addon-name').value = a.name;
+                document.getElementById('addon-price').value = a.price;
+                
+                document.getElementById('modal-addon').style.display = 'flex';
+            } catch(e) { console.error(e); }
+        };
+
+        window.submitAddonForm = async (e) => {
+            e.preventDefault();
+            if(state.isOfflineMode) return window.showNotification("Offline mode. Hubungkan Firebase untuk menyimpan", "error");
+
+            const id = document.getElementById('addon-id').value || `addon_${Date.now()}`;
+            const data = { 
+                id: id, 
+                name: document.getElementById('addon-name').value,
+                price: parseInt(document.getElementById('addon-price').value) || 0
+            };
+            try { await dbRef('addons').doc(id).set(data); window.showNotification("Add-on disimpan!"); window.closeModals(); } 
+            catch (err) { window.showNotification("Gagal menyimpan", "error"); }
+        };
+
+        window.deleteAddon = async (id) => {
+            if(!confirm("Yakin ingin menghapus Add-on ini?")) return;
+            try { await dbRef('addons').doc(id).delete(); window.showNotification("Add-on dihapus"); } 
+            catch (err) { window.showNotification("Gagal menghapus", "error"); }
+        };
+
         window.openCheckout = () => {
             try {
-                const subtotal = state.cart.reduce((s, i) => s + (Number(i.product.price) * Number(i.quantity)), 0);
-                const total = subtotal;
+                let subtotal = 0;
+                state.cart.forEach(item => {
+                    const unitPrice = getCartItemUnitPrice(item);
+                    subtotal += (unitPrice * Number(item.quantity));
+                });
                 
-                document.getElementById('checkout-total-display').innerText = formatRp(total);
+                document.getElementById('checkout-total-display').innerText = formatRp(subtotal);
                 document.getElementById('cash-amount').value = '';
+                document.getElementById('checkout-customer').value = ''; // Reset input pelanggan
                 document.getElementById('checkout-notes').value = ''; // Reset notes field
                 window.setPaymentMethod('Cash');
                 
@@ -977,7 +1132,12 @@
         };
 
         window.processCheckout = async () => {
-            const subtotal = state.cart.reduce((s, i) => s + (Number(i.product.price) * Number(i.quantity)), 0);
+            let subtotal = 0;
+            state.cart.forEach(item => {
+                const unitPrice = getCartItemUnitPrice(item);
+                subtotal += (unitPrice * Number(item.quantity));
+            });
+            
             const total = subtotal;
             let paymentAmount = total;
 
@@ -987,6 +1147,7 @@
                 if (paymentAmount < total) return alert("Uang tunai kurang dari total tagihan!");
             }
 
+            const transactionCustomer = document.getElementById('checkout-customer').value.trim(); // Grab Customer Name
             const transactionNotes = document.getElementById('checkout-notes').value.trim(); // Grab order notes
 
             const transaction = {
@@ -995,7 +1156,8 @@
                 paymentMethod: state.paymentMethod, paymentAmount: paymentAmount,
                 change: state.paymentMethod === 'Cash' ? paymentAmount - total : 0,
                 status: 'SUCCESS',
-                notes: transactionNotes // Save notes to transaction record
+                customerName: transactionCustomer, // Save customer to transaction record
+                notes: transactionNotes 
             };
 
             try {
@@ -1014,21 +1176,37 @@
 
         function openReceipt(trx) {
             document.getElementById('receipt-pos-name').innerText = state.posName;
-            document.getElementById('receipt-meta').innerHTML = `
+            
+            let metaHTML = `
                 <div class="flex justify-between"><span>No:</span><span>${trx.id}</span></div>
                 <div class="flex justify-between"><span>Tgl:</span><span>${new Date(trx.date).toLocaleString('id-ID')}</span></div>
-                <div class="flex justify-between"><span>Tipe:</span><span class="uppercase">${trx.paymentMethod}</span></div>
             `;
+
+            // Display Customer on receipt if exists
+            if (trx.customerName && trx.customerName.trim() !== '') {
+                metaHTML += `<div class="flex justify-between font-bold text-gray-800"><span>Pemesanan:</span><span>${trx.customerName}</span></div>`;
+            }
+
+            metaHTML += `<div class="flex justify-between"><span>Tipe:</span><span class="uppercase">${trx.paymentMethod}</span></div>`;
+            
+            document.getElementById('receipt-meta').innerHTML = metaHTML;
+
             document.getElementById('receipt-items').innerHTML = trx.items.map(i => {
-                const varName = i.variant ? `${i.product.name} (${i.variant})` : i.product.name;
-                return `<div><p class="font-medium">${varName}</p>
-                <div class="flex justify-between text-[10px] md:text-xs text-gray-600"><span>${i.quantity} x ${formatRp(i.product.price)}</span><span>${formatRp(i.quantity * i.product.price)}</span></div></div>`;
+                const unitPrice = getCartItemUnitPrice(i);
+                let addonsHTML = '';
+                if(i.addons && i.addons.length > 0) {
+                    addonsHTML = i.addons.map(a => `<span class="block text-[9px] md:text-[10px] text-gray-500">- ${a.name} ${a.price > 0 ? '(+'+formatRp(a.price)+')' : ''}</span>`).join('');
+                }
+
+                return `<div class="mb-2"><p class="font-medium leading-tight">${i.product.name}</p>
+                ${addonsHTML}
+                <div class="flex justify-between text-[10px] md:text-xs text-gray-600 mt-0.5"><span>${i.quantity} x ${formatRp(unitPrice)}</span><span>${formatRp(i.quantity * unitPrice)}</span></div></div>`;
             }).join('');
 
             // Inject Notes to receipt if available
             const notesEl = document.getElementById('receipt-notes');
             if (trx.notes && trx.notes.trim() !== '') {
-                notesEl.innerHTML = `<div class="text-[10px] md:text-xs mb-3 italic p-2 bg-gray-100 rounded break-words"><strong>Catatan:</strong> ${trx.notes}</div>`;
+                notesEl.innerHTML = `<div class="text-[10px] md:text-xs mb-3 italic p-2 border border-dashed border-gray-300 rounded break-words"><i class="ph-fill ph-note-pencil mr-1"></i><strong>Catatan:</strong> ${trx.notes}</div>`;
             } else {
                 notesEl.innerHTML = '';
             }
