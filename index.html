@@ -72,7 +72,6 @@
             <button onclick="window.switchTab('addons')" id="tab-addons" class="nav-btn flex items-center justify-center lg:justify-start p-3 rounded-xl transition-colors text-indigo-200 hover:bg-indigo-800 hover:text-white">
                 <i class="ph ph-puzzle-piece text-xl md:text-2xl pointer-events-none"></i><span class="hidden lg:block ml-3 font-medium pointer-events-none">Add-on</span>
             </button>
-            <!-- NEW: Tab Voucher -->
             <button onclick="window.switchTab('vouchers')" id="tab-vouchers" class="nav-btn flex items-center justify-center lg:justify-start p-3 rounded-xl transition-colors text-indigo-200 hover:bg-indigo-800 hover:text-white">
                 <i class="ph ph-ticket text-xl md:text-2xl pointer-events-none"></i><span class="hidden lg:block ml-3 font-medium pointer-events-none">Voucher</span>
             </button>
@@ -257,11 +256,12 @@
                 </button>
             </div>
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto w-full">
-                <table class="w-full text-left min-w-[600px]">
+                <table class="w-full text-left min-w-[700px]">
                     <thead class="bg-gray-50 border-b border-gray-100 text-gray-500 text-sm">
                         <tr>
                             <th class="p-4">Kode Promo</th>
                             <th class="p-4">Diskon (%)</th>
+                            <th class="p-4">Kuota Pemakaian</th>
                             <th class="p-4">Status</th>
                             <th class="p-4 text-right">Aksi</th>
                         </tr>
@@ -460,6 +460,12 @@
                     <label class="block text-xs md:text-sm font-medium mb-1">Diskon (%)</label>
                     <input id="voucher-discount" type="number" min="1" max="100" required placeholder="Contoh: 15" class="w-full p-2.5 md:p-3 border rounded-xl outline-none focus:border-indigo-500 text-sm md:text-base" />
                 </div>
+                <!-- BARU: Batas Pemakaian (Limit) -->
+                <div>
+                    <label class="block text-xs md:text-sm font-medium mb-1">Batas Pemakaian / Kuota (Kali)</label>
+                    <input id="voucher-limit" type="number" min="0" required placeholder="Isi 0 untuk tanpa batas" class="w-full p-2.5 md:p-3 border rounded-xl outline-none focus:border-indigo-500 text-sm md:text-base" />
+                    <p class="text-[10px] md:text-xs text-gray-500 mt-1">Isi 0 jika voucher dapat digunakan tanpa batas kuota.</p>
+                </div>
                 <div class="flex items-center gap-2 mt-4">
                     <input type="checkbox" id="voucher-active" checked class="w-5 h-5 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer" />
                     <label for="voucher-active" class="text-sm font-medium text-gray-700 cursor-pointer">Voucher Aktif (Dapat digunakan)</label>
@@ -586,7 +592,7 @@
             products: [], categories: [], addonGroups: [], vouchers: [], history: [], cart: [], 
             selectedCategory: 'Semua', paymentMethod: 'Cash', currentTransaction: null, printerDevice: null,
             isOfflineMode: false, dashboardFilterMonth: '', 
-            tempPendingProduct: null, currentDiscount: 0
+            tempPendingProduct: null, currentDiscount: 0, appliedVoucherId: null
         };
 
         const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(num) || 0);
@@ -667,7 +673,6 @@
                 renderAddonsTable();
             }, handleError);
 
-            // NEW: Vouchers Listener
             publicDbRef('vouchers').onSnapshot((snap) => {
                 state.vouchers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
                 renderVouchersTable();
@@ -718,12 +723,7 @@
             document.getElementById('prod-category').innerHTML = state.categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         }
 
-        window.setCategoryFilter = (catName) => { 
-            window.playHaptic();
-            state.selectedCategory = catName; 
-            renderCategories(); 
-            renderProducts(); 
-        };
+        window.setCategoryFilter = (catName) => { window.playHaptic(); state.selectedCategory = catName; renderCategories(); renderProducts(); };
 
         window.handleProductClick = (prodId) => {
             window.playHaptic();
@@ -1011,7 +1011,6 @@
             }
         }
 
-        // --- NEW: WAITING ORDERS RENDER LOGIC ---
         function renderWaitingOrders() {
             const container = document.getElementById('waiting-order-grid');
             const waitingOrders = state.history.filter(t => t.status !== 'VOID' && t.fulfillmentStatus === 'WAITING');
@@ -1121,13 +1120,14 @@
             `}).join('');
         }
 
-        // --- NEW: VOUCHERS TABLE RENDER ---
         function renderVouchersTable() {
             document.getElementById('vouchers-table-body').innerHTML = state.vouchers.map(v => {
+                const limitText = v.limit > 0 ? `${v.usageCount || 0} / ${v.limit} kali` : 'Tanpa Batas';
                 return `
                 <tr class="border-b hover:bg-gray-50 text-xs md:text-sm ${!v.isActive ? 'opacity-50' : ''}">
                     <td class="p-3 md:p-4 font-black text-indigo-600 tracking-wider whitespace-nowrap">${v.code}</td>
                     <td class="p-3 md:p-4 font-bold">${v.discountPercent}%</td>
+                    <td class="p-3 md:p-4 font-medium text-gray-600">${limitText}</td>
                     <td class="p-3 md:p-4">
                         <button type="button" onclick="window.toggleVoucherStatus('${v.id}', ${!v.isActive})" class="px-2 py-1 text-[10px] font-bold rounded-full ${v.isActive ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-600'}">
                             ${v.isActive ? 'AKTIF' : 'TIDAK AKTIF'}
@@ -1415,12 +1415,12 @@
             catch (err) { window.showNotification("Gagal menghapus", "error"); }
         };
 
-        // --- NEW: VOUCHERS LOGIC ---
         window.openVoucherForm = () => {
             window.playHaptic();
             document.getElementById('voucher-id').value = '';
             document.getElementById('voucher-code').value = '';
             document.getElementById('voucher-discount').value = '';
+            document.getElementById('voucher-limit').value = '0';
             document.getElementById('voucher-active').checked = true;
             document.getElementById('modal-voucher').style.display = 'flex';
         };
@@ -1448,6 +1448,8 @@
                 id: id,
                 code: code,
                 discountPercent: parseInt(document.getElementById('voucher-discount').value) || 0,
+                limit: parseInt(document.getElementById('voucher-limit').value) || 0,
+                usageCount: 0, // Inisiasi terpakai 0
                 isActive: document.getElementById('voucher-active').checked
             };
 
@@ -1476,6 +1478,7 @@
             window.playHaptic();
             try {
                 state.currentDiscount = 0;
+                state.appliedVoucherId = null;
                 document.getElementById('checkout-voucher-code').value = '';
                 document.getElementById('btn-clear-voucher').classList.add('hidden');
                 
@@ -1500,6 +1503,30 @@
             document.getElementById('checkout-total-display').innerText = formatRp(total);
         };
 
+        window.applyDiscount = (type, val) => {
+            window.playHaptic();
+            state.appliedVoucherId = null; // Diskon manual tidak pakai kuota
+            let subtotal = 0;
+            state.cart.forEach(item => subtotal += (getCartItemUnitPrice(item) * Number(item.quantity)));
+            
+            if (type === 'percent') {
+                state.currentDiscount = subtotal * (val / 100);
+                document.getElementById('checkout-discount').value = parseInt(state.currentDiscount).toLocaleString('id-ID');
+            } else if (type === 'clear') {
+                state.currentDiscount = 0;
+                document.getElementById('checkout-discount').value = '';
+            }
+            window.updateCheckoutTotalDisplay();
+        };
+
+        window.handleManualDiscount = (e) => {
+            state.appliedVoucherId = null; 
+            let val = e.target.value.replace(/[^0-9]/g, '');
+            e.target.value = val ? parseInt(val).toLocaleString('id-ID') : '';
+            state.currentDiscount = parseInt(val) || 0;
+            window.updateCheckoutTotalDisplay();
+        };
+
         window.applyVoucherKasir = () => {
             window.playHaptic();
             const codeInput = document.getElementById('checkout-voucher-code').value.trim().toUpperCase();
@@ -1510,10 +1537,17 @@
             
             const voucher = state.vouchers.find(v => v.code === codeInput && v.isActive);
             if(voucher) {
+                if (voucher.limit > 0 && (voucher.usageCount || 0) >= voucher.limit) {
+                    window.clearVoucherKasir();
+                    window.showNotification("Voucher sudah mencapai batas pemakaian", "error");
+                    return;
+                }
+
                 let subtotal = 0;
                 state.cart.forEach(item => subtotal += (getCartItemUnitPrice(item) * Number(item.quantity)));
                 
                 state.currentDiscount = subtotal * (voucher.discountPercent / 100);
+                state.appliedVoucherId = voucher.id; 
                 window.updateCheckoutTotalDisplay();
                 
                 document.getElementById('btn-clear-voucher').classList.remove('hidden');
@@ -1527,6 +1561,7 @@
         window.clearVoucherKasir = () => {
             window.playHaptic();
             state.currentDiscount = 0;
+            state.appliedVoucherId = null;
             document.getElementById('checkout-voucher-code').value = '';
             document.getElementById('btn-clear-voucher').classList.add('hidden');
             window.updateCheckoutTotalDisplay();
@@ -1580,7 +1615,7 @@
                 paymentMethod: state.paymentMethod, paymentAmount: paymentAmount,
                 change: state.paymentMethod === 'Cash' ? paymentAmount - total : 0,
                 status: 'SUCCESS',
-                fulfillmentStatus: 'DONE', // Kalau dari kasir langsung Done, atau bisa 'WAITING' (Disini asumsikan Done)
+                fulfillmentStatus: 'DONE', 
                 customerName: transactionCustomer,
                 notes: transactionNotes 
             };
@@ -1592,6 +1627,16 @@
                         const prod = state.products.find(p => String(p.id) === String(item.product.id));
                         if (prod) await publicDbRef('products').doc(prod.id).update({ stock: Number(prod.stock) - Number(item.quantity) });
                     }
+                    
+                    if (state.appliedVoucherId) {
+                        const vRef = publicDbRef('vouchers').doc(state.appliedVoucherId);
+                        await vRef.update({ usageCount: firebase.firestore.FieldValue.increment(1) });
+                        
+                        const voucher = state.vouchers.find(v => v.id === state.appliedVoucherId);
+                        if (voucher && voucher.limit > 0 && (voucher.usageCount + 1) >= voucher.limit) {
+                            await vRef.update({ isActive: false });
+                        }
+                    }
                 }
             } catch (err) { window.showNotification("Gagal sinkronisasi transaksi", "error"); }
 
@@ -1602,10 +1647,8 @@
         function openReceipt(trx) {
             document.getElementById('receipt-pos-name').innerText = state.posName;
             
-            const bcode = trx.bookingCode || trx.id.slice(-5).toUpperCase();
             let metaHTML = `
                 <div class="flex justify-between"><span>No:</span><span>${trx.id}</span></div>
-                <div class="flex justify-between font-bold text-red-500"><span>Kode:</span><span>${bcode}</span></div>
                 <div class="flex justify-between"><span>Tgl:</span><span>${new Date(trx.date).toLocaleString('id-ID')}</span></div>
             `;
 
@@ -1683,18 +1726,10 @@
                     optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', 'e7810a71-73ae-499d-8c15-faa9aef0c3f2'] 
                 });
                 state.printerDevice = device;
-                const signalName = device.name || 'Perangkat Tanpa Nama';
-                
-                document.getElementById('printer-status').innerText = `Terhubung`;
-                document.getElementById('printer-device-name').innerText = `Sinyal: ${signalName}`;
-                document.getElementById('printer-device-name').classList.remove('hidden');
-                
+                document.getElementById('printer-status').innerText = `Terhubung: ${device.name}`;
                 document.getElementById('printer-icon').classList.replace('text-gray-400', 'text-green-500');
-                window.showNotification(`Printer terhubung ke sinyal: ${signalName}`);
-            } catch (err) { 
-                console.error(err);
-                window.showNotification('Gagal mencari printer: ' + err.message, 'error'); 
-            }
+                window.showNotification(`Printer terhubung: ${device.name}`);
+            } catch (err) { window.showNotification('Gagal mencari printer', 'error'); }
         };
 
         initApp();
