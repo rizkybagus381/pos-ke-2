@@ -118,7 +118,6 @@
                             <span class="text-base md:text-lg font-bold text-gray-800">Total</span><span id="cart-total" class="text-lg md:text-xl font-bold text-indigo-600">Rp 0</span>
                         </div>
                     </div>
-                    <!-- TOMBOL BAYAR -->
                     <button id="btn-bayar" onclick="window.openCheckout()" class="w-full py-3 md:py-3.5 rounded-xl font-bold text-white shadow-lg flex justify-center items-center gap-2 bg-gray-300 transition-all pointer-events-none" style="cursor: not-allowed; opacity: 0.7;">
                         <i class="ph ph-wallet text-xl pointer-events-none"></i> Bayar
                     </button>
@@ -128,19 +127,51 @@
 
         <!-- ================= VIEW: DASHBOARD ================= -->
         <div id="view-dashboard" class="flex-1 p-4 md:p-8 bg-gray-50 overflow-y-auto" style="display: none;">
-            <h1 class="text-xl md:text-2xl font-bold mb-6">Ringkasan Hari Ini</h1>
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
-                <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border flex items-center gap-4">
-                    <div class="w-12 h-12 md:w-14 md:h-14 bg-green-100 text-green-600 rounded-xl flex items-center justify-center"><i class="ph ph-wallet text-2xl md:text-3xl"></i></div>
-                    <div><p class="text-xs md:text-sm text-gray-500">Pendapatan Kotor</p><h3 id="dash-revenue" class="text-lg md:text-2xl font-bold">Rp 0</h3></div>
+            <h1 class="text-xl md:text-2xl font-bold mb-6">Ringkasan Pendapatan</h1>
+            
+            <!-- Quick Stats: Today, This Month, Last Month -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
+                <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-l-4 border-l-green-500 flex flex-col justify-center">
+                    <p class="text-xs md:text-sm text-gray-500 font-medium mb-1">Hari Ini</p>
+                    <h3 id="dash-revenue-today" class="text-lg md:text-2xl font-bold text-gray-800">Rp 0</h3>
                 </div>
-                <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border flex items-center gap-4">
-                    <div class="w-12 h-12 md:w-14 md:h-14 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center"><i class="ph ph-receipt text-2xl md:text-3xl"></i></div>
-                    <div><p class="text-xs md:text-sm text-gray-500">Total Transaksi</p><h3 id="dash-trx-count" class="text-lg md:text-2xl font-bold">0</h3></div>
+                <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-l-4 border-l-blue-500 flex flex-col justify-center">
+                    <p class="text-xs md:text-sm text-gray-500 font-medium mb-1">Bulan Ini</p>
+                    <h3 id="dash-revenue-month" class="text-lg md:text-2xl font-bold text-gray-800">Rp 0</h3>
+                </div>
+                <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-l-4 border-l-purple-500 flex flex-col justify-center">
+                    <p class="text-xs md:text-sm text-gray-500 font-medium mb-1">Bulan Lalu</p>
+                    <h3 id="dash-revenue-lastmonth" class="text-lg md:text-2xl font-bold text-gray-800">Rp 0</h3>
                 </div>
             </div>
-            <div class="bg-white rounded-2xl shadow-sm border p-5 md:p-6 max-w-2xl">
-                <h2 class="text-base md:text-lg font-bold mb-4 text-red-500 flex items-center gap-2"><i class="ph ph-warning"></i> Peringatan Stok Menipis</h2>
+
+            <!-- Filtered Stats -->
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6 mb-8">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+                    <h2 class="text-base md:text-lg font-bold flex items-center gap-2 text-gray-800"><i class="ph-fill ph-calendar-blank text-indigo-500"></i> Laporan Bulanan</h2>
+                    <input type="month" id="dash-month-filter" onchange="window.updateDashboardFilter(this.value)" class="p-2 border border-gray-300 rounded-lg text-sm md:text-base outline-none focus:border-indigo-500">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-4">
+                        <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center"><i class="ph ph-wallet text-2xl"></i></div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-medium">Total Pendapatan</p>
+                            <h4 id="dash-filter-revenue" class="text-lg font-bold text-gray-800">Rp 0</h4>
+                        </div>
+                    </div>
+                    <div class="p-4 bg-gray-50 rounded-xl border border-gray-100 flex items-center gap-4">
+                        <div class="w-12 h-12 bg-amber-100 text-amber-600 rounded-full flex items-center justify-center"><i class="ph ph-receipt text-2xl"></i></div>
+                        <div>
+                            <p class="text-xs text-gray-500 font-medium">Total Transaksi (Sukses)</p>
+                            <h4 id="dash-filter-count" class="text-lg font-bold text-gray-800">0 Transaksi</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Low Stock Warning -->
+            <div class="bg-white rounded-2xl shadow-sm border p-5 md:p-6">
+                <h2 class="text-base md:text-lg font-bold mb-4 text-red-500 flex items-center gap-2"><i class="ph-fill ph-warning-circle"></i> Peringatan Stok Menipis</h2>
                 <div id="dash-low-stock" class="space-y-3"></div>
             </div>
         </div>
@@ -366,9 +397,11 @@
             user: null, posName: 'CAFE POS', products: [], categories: [],
             history: [], cart: [], selectedCategory: 'Semua',
             paymentMethod: 'Cash', currentTransaction: null, printerDevice: null,
-            isOfflineMode: false // Menandakan jika firebase error
+            isOfflineMode: false,
+            dashboardFilterMonth: '' // Menyimpan nilai filter bulan dashboard YYYY-MM
         };
 
+        // Format Rupiah
         const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(num) || 0);
 
         window.showNotification = (msg, type = 'success') => {
@@ -395,6 +428,12 @@
         }, 8000);
 
         async function initApp() {
+            // Inisialisasi filter bulan ke bulan ini
+            const todayStr = new Date().toISOString().substring(0, 7);
+            state.dashboardFilterMonth = todayStr;
+            const filterInput = document.getElementById('dash-month-filter');
+            if (filterInput) filterInput.value = todayStr;
+
             try { 
                 await auth.signInAnonymously(); 
             } catch (error) { 
@@ -445,7 +484,6 @@
             }, handleError);
         }
 
-        // --- SISTEM TAB ANTI-BUG ---
         window.switchTab = (tabId) => {
             window.closeModals();
             
@@ -457,7 +495,6 @@
             
             const activeView = document.getElementById(`view-${tabId}`);
             if (activeView) {
-                // POS View menggunakan flex-col/row yang responsive
                 activeView.style.display = (tabId === 'pos') ? 'flex' : 'block';
             }
             
@@ -559,8 +596,7 @@
                 </div>`;
             }).join('');
 
-            // Kalkulasi Total Tanpa PPN
-            const total = subtotal;
+            const total = subtotal; // Tanpa PPN
 
             document.getElementById('cart-subtotal').innerText = formatRp(subtotal);
             document.getElementById('cart-total').innerText = formatRp(total);
@@ -594,13 +630,44 @@
         window.removeFromCart = (prodId) => { state.cart = state.cart.filter(c => String(c.product.id) !== String(prodId)); window.renderCart(); };
         window.clearCart = () => { state.cart = []; window.renderCart(); };
 
-        function renderDashboard() {
-            const today = new Date().toISOString().split('T')[0];
-            const todayTrx = state.history.filter(h => h.date.startsWith(today));
-            const rev = todayTrx.reduce((sum, h) => sum + h.total, 0);
-            document.getElementById('dash-revenue').innerText = formatRp(rev);
-            document.getElementById('dash-trx-count').innerText = todayTrx.length;
+        // --- DASHBOARD LOGIC (UPDATED WITH VOID EXCLUSION & DATES) ---
+        window.updateDashboardFilter = (val) => {
+            state.dashboardFilterMonth = val;
+            renderDashboard();
+        };
 
+        function renderDashboard() {
+            // Hanya proses transaksi yang BUKAN 'VOID'
+            const activeTransactions = state.history.filter(h => h.status !== 'VOID');
+
+            const todayObj = new Date();
+            const todayStr = todayObj.toISOString().split('T')[0];
+            const thisMonthStr = todayStr.substring(0, 7); // format YYYY-MM
+            
+            // Hitung bulan kemarin
+            const lastMonthObj = new Date();
+            lastMonthObj.setMonth(lastMonthObj.getMonth() - 1);
+            const lastMonthStr = lastMonthObj.toISOString().substring(0, 7);
+
+            // Ringkasan Cepat
+            const todayTrx = activeTransactions.filter(h => h.date.startsWith(todayStr));
+            const thisMonthTrx = activeTransactions.filter(h => h.date.startsWith(thisMonthStr));
+            const lastMonthTrx = activeTransactions.filter(h => h.date.startsWith(lastMonthStr));
+
+            document.getElementById('dash-revenue-today').innerText = formatRp(todayTrx.reduce((sum, h) => sum + h.total, 0));
+            document.getElementById('dash-revenue-month').innerText = formatRp(thisMonthTrx.reduce((sum, h) => sum + h.total, 0));
+            document.getElementById('dash-revenue-lastmonth').innerText = formatRp(lastMonthTrx.reduce((sum, h) => sum + h.total, 0));
+
+            // Filter Berdasarkan Pilihan
+            const filterMonth = state.dashboardFilterMonth || thisMonthStr;
+            const filterInput = document.getElementById('dash-month-filter');
+            if (filterInput && !filterInput.value) filterInput.value = filterMonth;
+
+            const filteredTrx = activeTransactions.filter(h => h.date.startsWith(filterMonth));
+            document.getElementById('dash-filter-revenue').innerText = formatRp(filteredTrx.reduce((sum, h) => sum + h.total, 0));
+            document.getElementById('dash-filter-count').innerText = `${filteredTrx.length} Transaksi`;
+
+            // Stok Menipis
             const lowStock = state.products.filter(p => Number(p.stock) < 10);
             const lsContainer = document.getElementById('dash-low-stock');
             if (lowStock.length === 0) { lsContainer.innerHTML = '<p class="text-xs md:text-sm text-gray-500">Semua stok aman.</p>'; } 
@@ -639,22 +706,32 @@
             `).join('');
         }
 
+        // --- HISTORY TABLE (UPDATED WITH VOID UI) ---
         function renderHistoryTable() {
-            document.getElementById('history-table-body').innerHTML = state.history.map(t => `
-                <tr class="border-b hover:bg-gray-50 text-xs md:text-sm">
-                    <td class="p-3 md:p-4 font-medium text-indigo-600 whitespace-nowrap">${t.id}</td>
-                    <td class="p-3 md:p-4 whitespace-nowrap">${new Date(t.date).toLocaleString('id-ID')}</td>
-                    <td class="p-3 md:p-4 whitespace-nowrap">${t.items.length} macam</td>
-                    <td class="p-3 md:p-4"><span class="bg-indigo-50 text-indigo-700 px-2 py-1 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">${t.paymentMethod}</span></td>
-                    <td class="p-3 md:p-4 font-bold text-right whitespace-nowrap">${formatRp(t.total)}</td>
+            document.getElementById('history-table-body').innerHTML = state.history.map(t => {
+                const isVoid = t.status === 'VOID';
+                return `
+                <tr class="border-b hover:bg-gray-50 text-xs md:text-sm ${isVoid ? 'bg-red-50/50 opacity-60' : ''}">
+                    <td class="p-3 md:p-4 font-medium text-indigo-600 whitespace-nowrap">
+                        <div class="flex items-center gap-2">
+                            <span class="${isVoid ? 'line-through text-gray-500' : ''}">${t.id}</span>
+                            ${isVoid ? '<span class="bg-red-500 text-white px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider">VOID</span>' : ''}
+                        </div>
+                    </td>
+                    <td class="p-3 md:p-4 whitespace-nowrap ${isVoid ? 'line-through text-gray-500' : ''}">${new Date(t.date).toLocaleString('id-ID')}</td>
+                    <td class="p-3 md:p-4 whitespace-nowrap ${isVoid ? 'line-through text-gray-500' : ''}">${t.items.length} macam</td>
+                    <td class="p-3 md:p-4"><span class="${isVoid ? 'bg-gray-200 text-gray-500' : 'bg-indigo-50 text-indigo-700'} px-2 py-1 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">${t.paymentMethod}</span></td>
+                    <td class="p-3 md:p-4 font-bold text-right whitespace-nowrap ${isVoid ? 'line-through text-gray-500' : ''}">${formatRp(t.total)}</td>
                     <td class="p-3 md:p-4 text-center whitespace-nowrap">
+                        ${isVoid ? '<span class="text-xs text-red-500 italic font-medium">Dibatalkan</span>' : `
                         <div class="flex justify-center gap-1 md:gap-2">
                             <button type="button" onclick="window.reprintTransaction('${t.id}')" title="Print Ulang" class="p-1.5 md:p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg"><i class="ph ph-printer text-base md:text-lg pointer-events-none"></i></button>
                             <button type="button" onclick="window.voidTransaction('${t.id}')" title="Void Transaksi" class="p-1.5 md:p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg"><i class="ph ph-x-circle text-base md:text-lg pointer-events-none"></i></button>
                         </div>
+                        `}
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
         }
 
         window.reprintTransaction = (id) => {
@@ -662,19 +739,26 @@
             if(trx) openReceipt(trx);
         };
 
+        // --- VOID LOGIC (UPDATED: UPDATE INSTEAD OF DELETE) ---
         window.voidTransaction = async (id) => {
             const trx = state.history.find(t => String(t.id) === String(id));
             if(!trx) return;
-            if(!confirm(`Yakin ingin melakukan VOID pada transaksi ${id}?\nStok produk yang terjual akan dikembalikan.`)) return;
+            if(trx.status === 'VOID') return; // Mencegah double void
+
+            if(!confirm(`Yakin ingin melakukan VOID pada transaksi ${id}?\nTransaksi akan ditandai batal dan stok produk akan dikembalikan.`)) return;
 
             try {
+                // Kembalikan Stok
                 for (const item of trx.items) {
                     const prod = state.products.find(p => String(p.id) === String(item.product.id));
                     if (prod) {
                         try { await dbRef('products').doc(prod.id).update({ stock: Number(prod.stock) + Number(item.quantity) }); } catch(e){}
                     }
                 }
-                await dbRef('history').doc(id).delete();
+                
+                // Ubah Status transaksi menjadi VOID, JANGAN dihapus.
+                await dbRef('history').doc(id).update({ status: 'VOID' });
+                
                 window.showNotification("Transaksi berhasil di-VOID");
             } catch (err) { window.showNotification("Gagal melakukan VOID", "error"); }
         };
@@ -776,11 +860,10 @@
             catch (err) { window.showNotification("Gagal menghapus", "error"); }
         };
 
-        // --- CHECKOUT & PAYMENT ---
         window.openCheckout = () => {
             try {
                 const subtotal = state.cart.reduce((s, i) => s + (Number(i.product.price) * Number(i.quantity)), 0);
-                const total = subtotal; // PPN dihapus
+                const total = subtotal;
                 
                 document.getElementById('checkout-total-display').innerText = formatRp(total);
                 document.getElementById('cash-amount').value = '';
@@ -807,7 +890,7 @@
 
         window.processCheckout = async () => {
             const subtotal = state.cart.reduce((s, i) => s + (Number(i.product.price) * Number(i.quantity)), 0);
-            const total = subtotal; // PPN dihapus
+            const total = subtotal;
             let paymentAmount = total;
 
             if (state.paymentMethod === 'Cash') {
@@ -820,7 +903,8 @@
                 id: `TRX-${Date.now()}`, date: new Date().toISOString(), items: state.cart,
                 subtotal: subtotal, tax: 0, total: total,
                 paymentMethod: state.paymentMethod, paymentAmount: paymentAmount,
-                change: state.paymentMethod === 'Cash' ? paymentAmount - total : 0
+                change: state.paymentMethod === 'Cash' ? paymentAmount - total : 0,
+                status: 'SUCCESS' // Menandakan transaksi sukses
             };
 
             try {
