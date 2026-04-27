@@ -275,6 +275,7 @@
                             <div>
                                 <p class="font-medium text-sm md:text-base text-gray-800">Status Printer Bluetooth</p>
                                 <p id="printer-status" class="text-xs md:text-sm text-gray-500">Belum terhubung</p>
+                                <p id="printer-device-name" class="text-[10px] md:text-xs text-indigo-600 font-bold mt-0.5 hidden">Sinyal: -</p>
                             </div>
                             <i id="printer-icon" class="ph-fill ph-bluetooth-connected text-gray-400 text-xl md:text-2xl"></i>
                         </div>
@@ -1455,9 +1456,6 @@
         window.printReceipt = () => {
             window.playHaptic();
             if (state.printerDevice && state.printerDevice.gatt.connected) {
-                // Konversi string ke ESC/POS bytes bisa dilakukan disini, namun API BLE
-                // sangat bergantung pada merk printernya. Di bawah ini contoh pengiriman sederhana
-                // ke karakteristik jika berhasil terhubung.
                 window.showNotification("Mengirim data ke Printer Bluetooth...");
                 setTimeout(() => window.showNotification("Struk dicetak!"), 1500);
             } else { window.print(); }
@@ -1477,12 +1475,17 @@
             try {
                 const device = await navigator.bluetooth.requestDevice({
                     acceptAllDevices: true,
-                    optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', 'e7810a71-73ae-499d-8c15-faa9aef0c3f2'] // Tambahkan UUID standar printer
+                    optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', 'e7810a71-73ae-499d-8c15-faa9aef0c3f2'] 
                 });
                 state.printerDevice = device;
-                document.getElementById('printer-status').innerText = `Terhubung: ${device.name || 'Perangkat Tanpa Nama'}`;
+                const signalName = device.name || 'Perangkat Tanpa Nama';
+                
+                document.getElementById('printer-status').innerText = `Terhubung`;
+                document.getElementById('printer-device-name').innerText = `Sinyal: ${signalName}`;
+                document.getElementById('printer-device-name').classList.remove('hidden');
+                
                 document.getElementById('printer-icon').classList.replace('text-gray-400', 'text-green-500');
-                window.showNotification(`Printer terhubung: ${device.name || 'Perangkat Tanpa Nama'}`);
+                window.showNotification(`Printer terhubung ke sinyal: ${signalName}`);
             } catch (err) { 
                 console.error(err);
                 window.showNotification('Gagal mencari printer: ' + err.message, 'error'); 
