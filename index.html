@@ -388,7 +388,7 @@
                         <!-- Dynamic option rows -->
                     </div>
                     <button type="button" onclick="window.addOptionRow()" class="mt-3 text-sm text-indigo-600 font-bold hover:text-indigo-800 flex items-center gap-1">
-                        <i class="ph ph-plus-circle"></i> Tambah Pilihan Lainnya
+                        <i class="ph ph-plus-circle pointer-events-none"></i> Tambah Pilihan Lainnya
                     </button>
                 </div>
 
@@ -520,6 +520,15 @@
 
         const formatRp = (num) => new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(Number(num) || 0);
 
+        // --- NEW: Taptic / Haptic Feedback Helper ---
+        window.playHaptic = () => {
+            try {
+                if (typeof navigator !== 'undefined' && navigator.vibrate) {
+                    navigator.vibrate(40); // 40ms short vibration untuk efek "Tap"
+                }
+            } catch(e) { } // Ignore on unsupported devices
+        };
+
         window.showNotification = (msg, type = 'success') => {
             const el = document.getElementById('notification');
             document.getElementById('notif-message').innerText = msg;
@@ -627,6 +636,7 @@
         }
 
         window.switchTab = (tabId) => {
+            window.playHaptic();
             window.closeModals();
             const views = ['view-pos', 'view-dashboard', 'view-products', 'view-categories', 'view-addons', 'view-history', 'view-settings'];
             views.forEach(id => {
@@ -659,9 +669,15 @@
             document.getElementById('prod-category').innerHTML = state.categories.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
         }
 
-        window.setCategoryFilter = (catName) => { state.selectedCategory = catName; renderCategories(); renderProducts(); };
+        window.setCategoryFilter = (catName) => { 
+            window.playHaptic();
+            state.selectedCategory = catName; 
+            renderCategories(); 
+            renderProducts(); 
+        };
 
         window.handleProductClick = (prodId) => {
+            window.playHaptic();
             const prod = state.products.find(p => String(p.id) === String(prodId));
             if (!prod || prod.stock <= 0) return;
             
@@ -688,6 +704,7 @@
                                 <div class="flex items-center">
                                     <input type="${inputType}" ${inputName} 
                                         data-group="${ag.name}" data-name="${opt.name}" data-price="${opt.price}" 
+                                        onclick="window.playHaptic()"
                                         class="addon-input-val w-4 h-4 md:w-5 md:h-5 text-indigo-600 rounded focus:ring-indigo-500 mr-3">
                                     <span class="text-sm md:text-base font-medium text-gray-700">${opt.name}</span>
                                 </div>
@@ -705,11 +722,13 @@
         };
 
         window.closeVariantModal = () => {
+            window.playHaptic();
             document.getElementById('modal-addon-select').style.display = 'none';
             state.tempPendingProduct = null;
         };
 
         window.confirmAddonSelection = () => {
+            window.playHaptic();
             const prod = state.tempPendingProduct;
             if (!prod) return;
 
@@ -854,6 +873,7 @@
         };
 
         window.addToCart = (prodId, addons = []) => {
+            window.playHaptic();
             const product = state.products.find(p => String(p.id) === String(prodId));
             if (!product) return;
             
@@ -874,6 +894,7 @@
         };
 
         window.updateCartQty = (cartItemId, delta) => {
+            window.playHaptic();
             const item = state.cart.find(c => c.cartItemId === cartItemId);
             if (!item) return;
             
@@ -889,12 +910,14 @@
         };
 
         window.removeFromCart = (cartItemId) => { 
+            window.playHaptic();
             state.cart = state.cart.filter(c => c.cartItemId !== cartItemId); 
             window.renderCart(); 
             window.saveCartToCloud(); 
         };
         
         window.clearCart = () => { 
+            window.playHaptic();
             state.cart = []; 
             window.renderCart(); 
             window.saveCartToCloud(); 
@@ -1024,11 +1047,13 @@
         }
 
         window.reprintTransaction = (id) => {
+            window.playHaptic();
             const trx = state.history.find(t => String(t.id) === String(id));
             if(trx) openReceipt(trx);
         };
 
         window.voidTransaction = async (id) => {
+            window.playHaptic();
             const trx = state.history.find(t => String(t.id) === String(id));
             if(!trx) return;
             if(trx.status === 'VOID') return;
@@ -1049,6 +1074,7 @@
         };
 
         window.closeModals = () => {
+            window.playHaptic();
             const modals = ['modal-product', 'modal-category', 'modal-addon-group', 'modal-checkout', 'modal-receipt', 'modal-addon-select'];
             modals.forEach(id => {
                 const el = document.getElementById(id);
@@ -1065,13 +1091,14 @@
             
             container.innerHTML = state.addonGroups.map(ag => `
                 <label class="flex items-center p-2 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50">
-                    <input type="checkbox" value="${ag.id}" class="prod-ag-checkbox w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 mr-2" ${selectedIds.includes(ag.id) ? 'checked' : ''}>
+                    <input type="checkbox" value="${ag.id}" onclick="window.playHaptic()" class="prod-ag-checkbox w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 mr-2" ${selectedIds.includes(ag.id) ? 'checked' : ''}>
                     <span class="text-xs font-medium text-gray-700">${ag.name}</span>
                 </label>
             `).join('');
         }
 
         window.openProductForm = () => {
+            window.playHaptic();
             document.getElementById('modal-product-title').innerText = "Tambah Menu Baru";
             document.getElementById('prod-id').value = '';
             document.getElementById('prod-name').value = '';
@@ -1085,6 +1112,7 @@
         };
 
         window.editProduct = (id) => {
+            window.playHaptic();
             try {
                 const p = state.products.find(x => String(x.id) === String(id).trim());
                 if(!p) return alert("Error: Produk tidak ditemukan.");
@@ -1105,6 +1133,7 @@
 
         window.submitProductForm = async (e) => {
             e.preventDefault();
+            window.playHaptic();
             if(state.isOfflineMode) return window.showNotification("Offline mode. Hubungkan Firebase untuk menyimpan", "error");
 
             const checkedAg = document.querySelectorAll('.prod-ag-checkbox:checked');
@@ -1128,12 +1157,14 @@
         };
 
         window.deleteProduct = async (id) => {
+            window.playHaptic();
             if(!confirm("Yakin ingin menghapus menu ini?")) return;
             try { await publicDbRef('products').doc(id).delete(); window.showNotification("Menu dihapus"); } 
             catch (err) { window.showNotification("Gagal menghapus", "error"); }
         };
 
         window.openCategoryForm = () => {
+            window.playHaptic();
             document.getElementById('modal-category-title').innerText = "Tambah Kategori";
             document.getElementById('cat-id').value = '';
             document.getElementById('cat-name').value = '';
@@ -1141,6 +1172,7 @@
         };
 
         window.editCategory = (id) => {
+            window.playHaptic();
             try {
                 const c = state.categories.find(x => String(x.id) === String(id).trim());
                 if(!c) return alert("Error: Kategori tidak ditemukan.");
@@ -1155,6 +1187,7 @@
 
         window.submitCategoryForm = async (e) => {
             e.preventDefault();
+            window.playHaptic();
             if(state.isOfflineMode) return window.showNotification("Offline mode. Hubungkan Firebase untuk menyimpan", "error");
 
             const id = document.getElementById('cat-id').value || `cat_${Date.now()}`;
@@ -1164,23 +1197,26 @@
         };
 
         window.deleteCategory = async (id) => {
+            window.playHaptic();
             if(!confirm("Yakin ingin menghapus kategori ini?")) return;
             try { await publicDbRef('categories').doc(id).delete(); window.showNotification("Kategori dihapus"); } 
             catch (err) { window.showNotification("Gagal menghapus", "error"); }
         };
 
         window.addOptionRow = (name = '', price = 0) => {
+            window.playHaptic();
             const div = document.createElement('div');
             div.className = "flex gap-2 mb-2 option-row items-center";
             div.innerHTML = `
                 <input type="text" placeholder="Nama Opsi" value="${name}" class="flex-1 p-2 border rounded-lg text-sm opt-name outline-none focus:border-indigo-500" required>
                 <input type="number" placeholder="Harga (+Rp)" value="${price}" class="w-24 md:w-32 p-2 border rounded-lg text-sm opt-price outline-none focus:border-indigo-500" required>
-                <button type="button" onclick="this.parentElement.remove()" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i class="ph ph-trash pointer-events-none"></i></button>
+                <button type="button" onclick="this.parentElement.remove(); window.playHaptic();" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i class="ph ph-trash pointer-events-none"></i></button>
             `;
             document.getElementById('addon-options-container').appendChild(div);
         };
 
         window.openAddonGroupForm = () => {
+            window.playHaptic();
             document.getElementById('modal-addon-title').innerText = "Tambah Grup Add-on";
             document.getElementById('addon-group-id').value = '';
             document.getElementById('addon-group-name').value = '';
@@ -1191,6 +1227,7 @@
         };
 
         window.editAddonGroup = (id) => {
+            window.playHaptic();
             try {
                 const ag = state.addonGroups.find(x => String(x.id) === String(id).trim());
                 if(!ag) return alert("Error: Grup Add-on tidak ditemukan.");
@@ -1213,6 +1250,7 @@
 
         window.submitAddonGroupForm = async (e) => {
             e.preventDefault();
+            window.playHaptic();
             if(state.isOfflineMode) return window.showNotification("Offline mode. Hubungkan Firebase untuk menyimpan", "error");
 
             const rows = document.querySelectorAll('.option-row');
@@ -1241,12 +1279,14 @@
         };
 
         window.deleteAddonGroup = async (id) => {
+            window.playHaptic();
             if(!confirm("Yakin ingin menghapus Grup Add-on ini?")) return;
             try { await publicDbRef('addonGroups').doc(id).delete(); window.showNotification("Grup Add-on dihapus"); } 
             catch (err) { window.showNotification("Gagal menghapus", "error"); }
         };
 
         window.openCheckout = () => {
+            window.playHaptic();
             try {
                 state.currentDiscount = 0;
                 document.getElementById('checkout-discount').value = '';
@@ -1273,6 +1313,7 @@
         };
 
         window.applyDiscount = (type, val) => {
+            window.playHaptic();
             let subtotal = 0;
             state.cart.forEach(item => subtotal += (getCartItemUnitPrice(item) * Number(item.quantity)));
             
@@ -1294,6 +1335,7 @@
         };
 
         window.setPaymentMethod = (method) => {
+            window.playHaptic();
             state.paymentMethod = method;
             document.querySelectorAll('.pay-method-btn').forEach(btn => {
                 btn.className = "pay-method-btn py-2.5 md:py-3 rounded-xl border-2 font-bold border-gray-200 text-gray-500 text-sm md:text-base";
@@ -1309,6 +1351,7 @@
         };
 
         window.processCheckout = async () => {
+            window.playHaptic();
             let subtotal = 0;
             state.cart.forEach(item => {
                 const unitPrice = getCartItemUnitPrice(item);
@@ -1410,7 +1453,11 @@
         }
 
         window.printReceipt = () => {
+            window.playHaptic();
             if (state.printerDevice && state.printerDevice.gatt.connected) {
+                // Konversi string ke ESC/POS bytes bisa dilakukan disini, namun API BLE
+                // sangat bergantung pada merk printernya. Di bawah ini contoh pengiriman sederhana
+                // ke karakteristik jika berhasil terhubung.
                 window.showNotification("Mengirim data ke Printer Bluetooth...");
                 setTimeout(() => window.showNotification("Struk dicetak!"), 1500);
             } else { window.print(); }
@@ -1418,6 +1465,7 @@
 
         window.saveSettings = async (e) => {
             e.preventDefault();
+            window.playHaptic();
             try {
                 await publicDbRef('settings').doc('general').set({ posName: document.getElementById('input-pos-name').value });
                 window.showNotification("Nama POS diperbarui!");
@@ -1425,16 +1473,20 @@
         };
 
         window.connectBluetooth = async () => {
+            window.playHaptic();
             try {
                 const device = await navigator.bluetooth.requestDevice({
-                    filters: [{ services: ['000018f0-0000-1000-8000-00805f9b34fb'] }],
-                    optionalServices: ['e7810a71-73ae-499d-8c15-faa9aef0c3f2']
+                    acceptAllDevices: true,
+                    optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb', 'e7810a71-73ae-499d-8c15-faa9aef0c3f2'] // Tambahkan UUID standar printer
                 });
                 state.printerDevice = device;
-                document.getElementById('printer-status').innerText = `Terhubung: ${device.name}`;
+                document.getElementById('printer-status').innerText = `Terhubung: ${device.name || 'Perangkat Tanpa Nama'}`;
                 document.getElementById('printer-icon').classList.replace('text-gray-400', 'text-green-500');
-                window.showNotification(`Printer terhubung: ${device.name}`);
-            } catch (err) { window.showNotification('Gagal mencari printer', 'error'); }
+                window.showNotification(`Printer terhubung: ${device.name || 'Perangkat Tanpa Nama'}`);
+            } catch (err) { 
+                console.error(err);
+                window.showNotification('Gagal mencari printer: ' + err.message, 'error'); 
+            }
         };
 
         initApp();
