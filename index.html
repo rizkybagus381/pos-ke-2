@@ -57,6 +57,9 @@
             <button onclick="window.switchTab('pos')" id="tab-pos" class="nav-btn flex items-center justify-center lg:justify-start p-3 rounded-xl transition-colors bg-indigo-600 text-white shadow-lg">
                 <i class="ph ph-shopping-bag text-xl md:text-2xl pointer-events-none"></i><span class="hidden lg:block ml-3 font-medium pointer-events-none">Kasir</span>
             </button>
+            <button onclick="window.switchTab('waiting')" id="tab-waiting" class="nav-btn flex items-center justify-center lg:justify-start p-3 rounded-xl transition-colors text-indigo-200 hover:bg-indigo-800 hover:text-white">
+                <i class="ph ph-cooking-pot text-xl md:text-2xl pointer-events-none"></i><span class="hidden lg:block ml-3 font-medium pointer-events-none">Waiting Order</span>
+            </button>
             <button onclick="window.switchTab('dashboard')" id="tab-dashboard" class="nav-btn flex items-center justify-center lg:justify-start p-3 rounded-xl transition-colors text-indigo-200 hover:bg-indigo-800 hover:text-white">
                 <i class="ph ph-squares-four text-xl md:text-2xl pointer-events-none"></i><span class="hidden lg:block ml-3 font-medium pointer-events-none">Dashboard</span>
             </button>
@@ -128,6 +131,14 @@
                         <i class="ph ph-wallet text-xl pointer-events-none"></i> Bayar
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- ================= VIEW: WAITING ORDER ================= -->
+        <div id="view-waiting" class="flex-1 p-4 md:p-8 bg-gray-50 overflow-y-auto" style="display: none;">
+            <h1 class="text-xl md:text-2xl font-bold mb-6">Waiting Order</h1>
+            <div id="waiting-order-grid" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
+                <!-- Waiting orders rendered here -->
             </div>
         </div>
 
@@ -237,12 +248,13 @@
         <div id="view-history" class="flex-1 p-4 md:p-8 bg-gray-50 overflow-y-auto" style="display: none;">
             <h1 class="text-xl md:text-2xl font-bold mb-6">Riwayat Transaksi</h1>
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto w-full">
-                <table class="w-full text-left min-w-[700px]">
+                <table class="w-full text-left min-w-[800px]">
                     <thead class="bg-gray-50 border-b text-gray-500 text-sm">
                         <tr>
                             <th class="p-4">ID Transaksi / Pelanggan</th>
                             <th class="p-4">Waktu</th>
                             <th class="p-4">Items</th>
+                            <th class="p-4">Status</th>
                             <th class="p-4">Metode</th>
                             <th class="p-4 text-right">Total</th>
                             <th class="p-4 text-center">Aksi</th>
@@ -632,14 +644,14 @@
 
             publicDbRef('history').onSnapshot((snap) => {
                 state.history = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => new Date(b.date) - new Date(a.date));
-                renderHistoryTable(); renderDashboard();
+                renderHistoryTable(); renderDashboard(); renderWaitingOrders();
             }, handleError);
         }
 
         window.switchTab = (tabId) => {
             window.playHaptic();
             window.closeModals();
-            const views = ['view-pos', 'view-dashboard', 'view-products', 'view-categories', 'view-addons', 'view-history', 'view-settings'];
+            const views = ['view-pos', 'view-waiting', 'view-dashboard', 'view-products', 'view-categories', 'view-addons', 'view-history', 'view-settings'];
             views.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.style.display = 'none';
@@ -967,6 +979,64 @@
             }
         }
 
+        // --- NEW: WAITING ORDERS RENDER LOGIC ---
+        function renderWaitingOrders() {
+            const container = document.getElementById('waiting-order-grid');
+            const waitingOrders = state.history.filter(t => t.status !== 'VOID' && t.fulfillmentStatus === 'WAITING');
+
+            if (waitingOrders.length === 0) {
+                container.innerHTML = `<div class="col-span-full flex flex-col items-center justify-center py-16 text-gray-42EYHgEzWEdjJgYKAu8VjC4DohVYUMbvZ6Ua45MgSaYBTFv3725expKB69YsjM6Utj99E6Sn3LpcxQ4mNrwfrJLM5NGbWiQ-base font-medium">Semua pesanan sudah selesai dibuat.</p></div>`;
+                return;
+            }
+
+            container.innerHTML = waitingOrders.map(t => {
+                const customer = t.customerName && t.customerName.trim() !== '' ? t.customerName : 'Customer / Meja ?';
+                const itemsHtml = t.items.map(i => {
+                    let addonText = '';
+                    if (i.addons && i.addons.length > 0) {
+                        addonText = `<br><span class="text-[10px] text-gray-500 font-normal ml-3 leading-tight">- ${i.addons.map(a=>a.name).join(', ')}</span>`;
+                    }
+                    return `<li class="text-xs md:text-sm font-semibold border-b border-gray-100 py-2 leading-tight">${i.quantity}x ${i.product.name} ${addonText}</li>`;
+                }).join('');
+
+                const notesHtml = t.notes && t.notes.trim() !== '' ? `<div class="mt-3 p-2.5 bg-yellow-50 rounded-lg border border-yellow-200 text-xs text-yellow-800 break-words leading-relaxed"><i class="ph-fill ph-note-pencil mr-1 text-sm"></i><strong>Catatan:</strong> ${t.notes}</div>` : '';
+
+                return `
+                <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden flex flex-col h-full hover:shadow-md transition-shadow">
+                    <div class="p-3 md:p-4 bg-indigo-50 border-b border-indigo-100 flex justify-between items-center">
+                        <div class="flex-1 pr-2">
+                            <h3 class="font-bold text-indigo-900 text-sm md:text-base truncate">${customer}</h3>
+                            <p class="text-[10px] md:text-xs text-indigo-600 font-medium">${new Date(t.date).toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'})} - ${t.id.slice(-6)}</p>
+                        </div>
+                        <span class="px-2 py-1 bg-orange-100 text-orange-600 text-[9px] md:text-[10px] font-bold rounded uppercase tracking-wider whitespace-nowrap">Menunggu</span>
+                    </div>
+                    <div class="p-4 flex-1 overflow-y-auto">
+                        <ul class="space-y-1">
+                            ${itemsHtml}
+                        </ul>
+                        ${notesHtml}
+                    </div>
+                    <div class="p-3 md:p-4 bg-gray-50 border-t border-gray-100 mt-auto">
+                        <button type="button" onclick="window.completeOrder('${t.id}')" class="w-full py-2.5 md:py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-bold text-sm flex justify-center items-center gap-2 transition-colors active:scale-95 shadow-sm">
+                            <i class="ph-fill ph-check-circle text-lg pointer-events-none"></i> Selesai
+                        </button>
+                    </div>
+                </div>
+                `;
+            }).join('');
+        }
+
+        window.completeOrder = async (id) => {
+            window.playHaptic();
+            if(!confirm(`Tandai pesanan ini sebagai SELESAI?`)) return;
+            try {
+                await publicDbRef('history').doc(id).update({ fulfillmentStatus: 'DONE' });
+                window.showNotification("Pesanan selesai!");
+            } catch (err) {
+                window.showNotification("Gagal update status pesanan", "error");
+            }
+        };
+
         function renderProductsTable() {
             document.getElementById('products-table-body').innerHTML = state.products.map(p => `
                 <tr class="border-b hover:bg-gray-50 text-xs md:text-sm">
@@ -1021,13 +1091,19 @@
         function renderHistoryTable() {
             document.getElementById('history-table-body').innerHTML = state.history.map(t => {
                 const isVoid = t.status === 'VOID';
+                const statusBadge = isVoid 
+                    ? '<span class="bg-red-500 text-white px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider">VOID</span>' 
+                    : (t.fulfillmentStatus === 'WAITING' 
+                        ? '<span class="bg-orange-100 text-orange-600 border border-orange-200 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider">WAITING</span>'
+                        : '<span class="bg-green-100 text-green-600 border border-green-200 px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider">DONE</span>');
+
                 const customerMeta = t.customerName ? `<br><span class="text-[10px] text-gray-500 font-normal border bg-gray-100 px-1 py-0.5 rounded mt-1 inline-block"><i class="ph-fill ph-user mr-1"></i>${t.customerName}</span>` : '';
                 return `
                 <tr class="border-b hover:bg-gray-50 text-xs md:text-sm ${isVoid ? 'bg-red-50/50 opacity-60' : ''}">
                     <td class="p-3 md:p-4 font-medium text-indigo-600 whitespace-nowrap">
                         <div class="flex items-center gap-2">
                             <span class="${isVoid ? 'line-through text-gray-500' : ''}">${t.id}</span>
-                            ${isVoid ? '<span class="bg-red-500 text-white px-1.5 py-0.5 rounded text-[9px] font-bold tracking-wider">VOID</span>' : ''}
+                            ${statusBadge}
                         </div>
                         ${customerMeta}
                     </td>
@@ -1378,6 +1454,7 @@
                 paymentMethod: state.paymentMethod, paymentAmount: paymentAmount,
                 change: state.paymentMethod === 'Cash' ? paymentAmount - total : 0,
                 status: 'SUCCESS',
+                fulfillmentStatus: 'WAITING', // NEW: Flag untuk masuk ke Waiting Order
                 customerName: transactionCustomer,
                 notes: transactionNotes 
             };
