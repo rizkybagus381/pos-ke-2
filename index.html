@@ -939,6 +939,8 @@
                     <td class="p-3 md:p-4">${typeText}</td>
                     <td class="p-3 md:p-4 leading-relaxed">${optionsHtml}</td>
                     <td class="p-3 md:p-4 text-right whitespace-nowrap">
+                        <!-- Tombol Edit Grup Add-on telah ditambahkan -->
+                        <button type="button" onclick="window.editAddonGroup('${ag.id}')" class="p-1.5 md:p-2 text-blue-600 hover:bg-blue-50 rounded-lg mr-1"><i class="ph ph-pencil-simple text-base md:text-lg pointer-events-none"></i></button>
                         <button type="button" onclick="window.deleteAddonGroup('${ag.id}')" class="p-1.5 md:p-2 text-red-600 hover:bg-red-50 rounded-lg"><i class="ph ph-trash text-base md:text-lg pointer-events-none"></i></button>
                     </td>
                 </tr>
@@ -1007,7 +1009,7 @@
             });
         };
 
-        // --- NEW: Handle Product Form Checkboxes for Add-on Groups ---
+        // --- Handle Product Form Checkboxes for Add-on Groups ---
         function renderProductAddonGroupCheckboxes(selectedIds = []) {
             const container = document.getElementById('prod-addon-groups-container');
             if (state.addonGroups.length === 0) {
@@ -1122,30 +1124,48 @@
             catch (err) { window.showNotification("Gagal menghapus", "error"); }
         };
 
-        // --- NEW: ADD-ON GROUP CRUD LOGIC ---
-        window.openAddonGroupForm = () => {
-            document.getElementById('addon-group-id').value = '';
-            document.getElementById('addon-group-name').value = '';
-            document.getElementById('addon-group-type').value = 'single';
-            document.getElementById('addon-options-container').innerHTML = `
-                <div class="flex gap-2 mb-2 option-row items-center">
-                    <input type="text" placeholder="Nama Opsi (cth: Hot)" class="flex-1 p-2 border rounded-lg text-sm opt-name outline-none focus:border-indigo-500" required>
-                    <input type="number" placeholder="Harga (+Rp)" value="0" class="w-24 md:w-32 p-2 border rounded-lg text-sm opt-price outline-none focus:border-indigo-500" required>
-                    <button type="button" onclick="this.parentElement.remove()" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i class="ph ph-trash pointer-events-none"></i></button>
-                </div>
-            `;
-            document.getElementById('modal-addon-group').style.display = 'flex';
-        };
-
-        window.addOptionRow = () => {
+        // --- NEW: ADD-ON GROUP EDIT LOGIC ---
+        window.addOptionRow = (name = '', price = 0) => {
             const div = document.createElement('div');
             div.className = "flex gap-2 mb-2 option-row items-center";
             div.innerHTML = `
-                <input type="text" placeholder="Nama Opsi" class="flex-1 p-2 border rounded-lg text-sm opt-name outline-none focus:border-indigo-500" required>
-                <input type="number" placeholder="Harga (+Rp)" value="0" class="w-24 md:w-32 p-2 border rounded-lg text-sm opt-price outline-none focus:border-indigo-500" required>
+                <input type="text" placeholder="Nama Opsi" value="${name}" class="flex-1 p-2 border rounded-lg text-sm opt-name outline-none focus:border-indigo-500" required>
+                <input type="number" placeholder="Harga (+Rp)" value="${price}" class="w-24 md:w-32 p-2 border rounded-lg text-sm opt-price outline-none focus:border-indigo-500" required>
                 <button type="button" onclick="this.parentElement.remove()" class="p-2 text-red-500 hover:bg-red-50 rounded-lg"><i class="ph ph-trash pointer-events-none"></i></button>
             `;
             document.getElementById('addon-options-container').appendChild(div);
+        };
+
+        window.openAddonGroupForm = () => {
+            document.getElementById('modal-addon-title').innerText = "Tambah Grup Add-on";
+            document.getElementById('addon-group-id').value = '';
+            document.getElementById('addon-group-name').value = '';
+            document.getElementById('addon-group-type').value = 'single';
+            document.getElementById('addon-options-container').innerHTML = ''; // Clear lama
+            window.addOptionRow(); // Beri 1 row kosong untuk diisi
+            document.getElementById('modal-addon-group').style.display = 'flex';
+        };
+
+        window.editAddonGroup = (id) => {
+            try {
+                const ag = state.addonGroups.find(x => String(x.id) === String(id).trim());
+                if(!ag) return alert("Error: Grup Add-on tidak ditemukan.");
+                
+                document.getElementById('modal-addon-title').innerText = "Edit Grup Add-on";
+                document.getElementById('addon-group-id').value = ag.id;
+                document.getElementById('addon-group-name').value = ag.name;
+                document.getElementById('addon-group-type').value = ag.type;
+                
+                const container = document.getElementById('addon-options-container');
+                container.innerHTML = '';
+                
+                // Isi ulang row dari data sebelumnya
+                ag.options.forEach(opt => {
+                    window.addOptionRow(opt.name, opt.price);
+                });
+                
+                document.getElementById('modal-addon-group').style.display = 'flex';
+            } catch(e) { console.error(e); }
         };
 
         window.submitAddonGroupForm = async (e) => {
@@ -1193,8 +1213,8 @@
                 
                 document.getElementById('checkout-total-display').innerText = formatRp(subtotal);
                 document.getElementById('cash-amount').value = '';
-                document.getElementById('checkout-customer').value = ''; // Reset input pelanggan
-                document.getElementById('checkout-notes').value = ''; // Reset notes field
+                document.getElementById('checkout-customer').value = ''; 
+                document.getElementById('checkout-notes').value = ''; 
                 window.setPaymentMethod('Cash');
                 
                 document.getElementById('modal-checkout').style.display = 'flex';
@@ -1267,7 +1287,6 @@
                 <div class="flex justify-between"><span>Tgl:</span><span>${new Date(trx.date).toLocaleString('id-ID')}</span></div>
             `;
 
-            // Display Customer on receipt if exists
             if (trx.customerName && trx.customerName.trim() !== '') {
                 metaHTML += `<div class="flex justify-between font-bold text-gray-800"><span>Pemesanan:</span><span>${trx.customerName}</span></div>`;
             }
@@ -1288,7 +1307,6 @@
                 <div class="flex justify-between text-[10px] md:text-xs text-gray-600 mt-0.5"><span>${i.quantity} x ${formatRp(unitPrice)}</span><span>${formatRp(i.quantity * unitPrice)}</span></div></div>`;
             }).join('');
 
-            // Inject Notes to receipt if available
             const notesEl = document.getElementById('receipt-notes');
             if (trx.notes && trx.notes.trim() !== '') {
                 notesEl.innerHTML = `<div class="text-[10px] md:text-xs mb-3 italic p-2 border border-dashed border-gray-300 rounded break-words"><i class="ph-fill ph-note-pencil mr-1"></i><strong>Catatan:</strong> ${trx.notes}</div>`;
