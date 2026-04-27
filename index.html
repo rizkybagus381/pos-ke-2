@@ -129,7 +129,6 @@
         <div id="view-dashboard" class="flex-1 p-4 md:p-8 bg-gray-50 overflow-y-auto" style="display: none;">
             <h1 class="text-xl md:text-2xl font-bold mb-6">Ringkasan Pendapatan</h1>
             
-            <!-- Quick Stats: Today, This Month, Last Month -->
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6 mb-8">
                 <div class="bg-white p-5 md:p-6 rounded-2xl shadow-sm border border-l-4 border-l-green-500 flex flex-col justify-center">
                     <p class="text-xs md:text-sm text-gray-500 font-medium mb-1">Hari Ini</p>
@@ -145,7 +144,6 @@
                 </div>
             </div>
 
-            <!-- Filtered Stats -->
             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 md:p-6 mb-8">
                 <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
                     <h2 class="text-base md:text-lg font-bold flex items-center gap-2 text-gray-800"><i class="ph-fill ph-calendar-blank text-indigo-500"></i> Laporan Bulanan</h2>
@@ -169,7 +167,6 @@
                 </div>
             </div>
 
-            <!-- Low Stock Warning -->
             <div class="bg-white rounded-2xl shadow-sm border p-5 md:p-6">
                 <h2 class="text-base md:text-lg font-bold mb-4 text-red-500 flex items-center gap-2"><i class="ph-fill ph-warning-circle"></i> Peringatan Stok Menipis</h2>
                 <div id="dash-low-stock" class="space-y-3"></div>
@@ -300,6 +297,15 @@
                     <label class="block text-xs md:text-sm font-medium mb-1">URL Gambar (Opsional)</label>
                     <input id="prod-image" type="url" placeholder="https://..." class="w-full p-2.5 md:p-3 border rounded-xl outline-none focus:border-indigo-500 text-sm md:text-base" />
                 </div>
+                
+                <!-- NEW: Toggle for Hot / Iced Addon -->
+                <div class="bg-indigo-50 border border-indigo-100 rounded-xl p-3 md:p-4 mt-2">
+                    <label class="flex items-center text-xs md:text-sm font-medium text-indigo-900 cursor-pointer">
+                        <input type="checkbox" id="prod-has-temp" class="mr-3 w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500" />
+                        Menu ini memiliki pilihan varian "Hot" atau "Iced"
+                    </label>
+                </div>
+
                 <div class="flex gap-3 md:gap-4 pt-3 md:pt-4 mt-4 md:mt-6 border-t border-gray-100">
                     <button type="button" onclick="window.closeModals()" class="flex-1 py-2.5 md:py-3 bg-gray-100 font-bold rounded-xl hover:bg-gray-200 text-sm md:text-base">Batal</button>
                     <button type="submit" class="flex-1 py-2.5 md:py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-md hover:bg-indigo-700 text-sm md:text-base">Simpan Menu</button>
@@ -329,6 +335,27 @@
         </div>
     </div>
 
+    <!-- NEW: Modal Select Variant (Hot / Iced) -->
+    <div id="modal-variant" class="fixed inset-0 bg-black/50 backdrop-blur-sm items-center justify-center z-50 p-4 modal-enter" style="display: none;">
+        <div class="bg-white rounded-2xl shadow-2xl w-[95%] max-w-sm overflow-hidden text-center">
+            <div class="p-6">
+                <h2 class="text-lg md:text-xl font-bold mb-2 text-gray-800">Pilih Varian</h2>
+                <p id="variant-prod-name" class="text-gray-500 mb-6 text-sm md:text-base">Nama Produk</p>
+                <div class="grid grid-cols-2 gap-4">
+                    <button type="button" onclick="window.selectVariant('Hot')" class="py-4 border-2 border-red-500 text-red-600 rounded-xl font-bold hover:bg-red-50 transition-colors flex flex-col items-center gap-2">
+                        <i class="ph-fill ph-fire text-2xl md:text-3xl pointer-events-none"></i> Hot
+                    </button>
+                    <button type="button" onclick="window.selectVariant('Iced')" class="py-4 border-2 border-blue-500 text-blue-600 rounded-xl font-bold hover:bg-blue-50 transition-colors flex flex-col items-center gap-2">
+                        <i class="ph-fill ph-snowflake text-2xl md:text-3xl pointer-events-none"></i> Iced
+                    </button>
+                </div>
+            </div>
+            <div class="p-4 bg-gray-50 border-t">
+                <button type="button" onclick="window.closeVariantModal()" class="w-full py-2.5 md:py-3 bg-white border font-bold rounded-xl text-gray-600 hover:bg-gray-100 text-sm md:text-base">Batal</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Checkout -->
     <div id="modal-checkout" class="fixed inset-0 bg-black/50 backdrop-blur-sm items-center justify-center z-50 p-4 modal-enter" style="display: none;">
         <div class="bg-white rounded-3xl shadow-2xl w-[95%] max-w-md overflow-hidden max-h-[90vh] overflow-y-auto">
@@ -343,10 +370,18 @@
                     <button type="button" onclick="window.setPaymentMethod('QRIS')" id="btn-pay-qris" class="pay-method-btn py-2.5 md:py-3 rounded-xl border-2 font-bold border-gray-200 text-gray-500 text-sm md:text-base">QRIS</button>
                     <button type="button" onclick="window.setPaymentMethod('Card')" id="btn-pay-card" class="pay-method-btn py-2.5 md:py-3 rounded-xl border-2 font-bold border-gray-200 text-gray-500 text-sm md:text-base">Card</button>
                 </div>
+                
                 <div id="cash-input-container">
                     <input type="text" id="cash-amount" placeholder="Nominal Uang (Rp)" oninput="window.formatCashInput(event)"
                         class="w-full p-3 md:p-4 mb-4 md:mb-6 text-lg md:text-xl font-bold border-2 rounded-xl focus:border-indigo-600 outline-none" autofocus />
                 </div>
+
+                <!-- NEW: Checkout Notes -->
+                <div class="mb-6">
+                    <label class="block text-xs md:text-sm font-medium mb-1 text-gray-700">Catatan Pesanan (Opsional)</label>
+                    <textarea id="checkout-notes" rows="2" class="w-full p-2.5 md:p-3 border rounded-xl outline-none focus:border-indigo-500 text-sm md:text-base bg-gray-50" placeholder="Tambahkan catatan untuk pesanan..."></textarea>
+                </div>
+
                 <button type="button" onclick="window.processCheckout()" class="w-full py-3.5 md:py-4 bg-indigo-600 text-white rounded-xl font-bold text-base md:text-lg hover:bg-indigo-700 flex justify-center gap-2">
                     <i class="ph-fill ph-check-circle text-xl md:text-2xl pointer-events-none"></i> Proses Pembayaran
                 </button>
@@ -364,6 +399,8 @@
                 </div>
                 <div class="text-[10px] md:text-xs border-t border-b border-dashed border-gray-400 py-2 mb-3" id="receipt-meta"></div>
                 <div class="text-xs md:text-sm space-y-2 mb-3" id="receipt-items"></div>
+                <!-- NEW: Receipt Notes Output -->
+                <div id="receipt-notes"></div>
                 <div class="text-xs md:text-sm border-t border-dashed border-gray-400 pt-3 space-y-1" id="receipt-summary"></div>
                 <div class="text-center text-[10px] md:text-xs mt-6 font-medium">Terima Kasih Atas Kunjungan Anda!</div>
             </div>
@@ -397,8 +434,7 @@
             user: null, posName: 'CAFE POS', products: [], categories: [],
             history: [], cart: [], selectedCategory: 'Semua',
             paymentMethod: 'Cash', currentTransaction: null, printerDevice: null,
-            isOfflineMode: false,
-            dashboardFilterMonth: '' // Menyimpan nilai filter bulan dashboard YYYY-MM
+            isOfflineMode: false, dashboardFilterMonth: '', tempPendingProduct: null
         };
 
         // Format Rupiah
@@ -428,7 +464,6 @@
         }, 8000);
 
         async function initApp() {
-            // Inisialisasi filter bulan ke bulan ini
             const todayStr = new Date().toISOString().substring(0, 7);
             state.dashboardFilterMonth = todayStr;
             const filterInput = document.getElementById('dash-month-filter');
@@ -486,7 +521,6 @@
 
         window.switchTab = (tabId) => {
             window.closeModals();
-            
             const views = ['view-pos', 'view-dashboard', 'view-products', 'view-categories', 'view-history', 'view-settings'];
             views.forEach(id => {
                 const el = document.getElementById(id);
@@ -494,9 +528,7 @@
             });
             
             const activeView = document.getElementById(`view-${tabId}`);
-            if (activeView) {
-                activeView.style.display = (tabId === 'pos') ? 'flex' : 'block';
-            }
+            if (activeView) activeView.style.display = (tabId === 'pos') ? 'flex' : 'block';
             
             document.querySelectorAll('.nav-btn').forEach(el => {
                 el.classList.remove('bg-indigo-600', 'text-white', 'shadow-lg');
@@ -522,6 +554,32 @@
 
         window.setCategoryFilter = (catName) => { state.selectedCategory = catName; renderCategories(); renderProducts(); };
 
+        // --- NEW: Addon Variant Logic for Clicking Product ---
+        window.handleProductClick = (prodId) => {
+            const prod = state.products.find(p => String(p.id) === String(prodId));
+            if (!prod || prod.stock <= 0) return;
+            
+            if (prod.hasTemperature) {
+                state.tempPendingProduct = prod;
+                document.getElementById('variant-prod-name').innerText = prod.name;
+                document.getElementById('modal-variant').style.display = 'flex';
+            } else {
+                window.addToCart(prodId, '');
+            }
+        };
+
+        window.closeVariantModal = () => {
+            document.getElementById('modal-variant').style.display = 'none';
+            state.tempPendingProduct = null;
+        };
+
+        window.selectVariant = (variant) => {
+            if (state.tempPendingProduct) {
+                window.addToCart(state.tempPendingProduct.id, variant);
+                window.closeVariantModal();
+            }
+        };
+
         window.renderProducts = () => {
             const searchInput = document.getElementById('search-input');
             const searchQ = searchInput ? searchInput.value.toLowerCase() : '';
@@ -540,11 +598,12 @@
             container.innerHTML = filtered.map(p => {
                 const isOut = p.stock <= 0;
                 return `
-                <div onclick="${isOut ? '' : `window.addToCart('${p.id}')`}" class="bg-white rounded-xl md:rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-gray-100 flex flex-col group ${isOut ? 'opacity-50 grayscale cursor-not-allowed' : ''}">
+                <div onclick="${isOut ? '' : `window.handleProductClick('${p.id}')`}" class="bg-white rounded-xl md:rounded-2xl shadow-sm hover:shadow-md transition-all cursor-pointer overflow-hidden border border-gray-100 flex flex-col group relative ${isOut ? 'opacity-50 grayscale cursor-not-allowed' : ''}">
                     <div class="h-28 md:h-40 relative">
                         <img src="${p.image}" class="w-full h-full object-cover group-hover:scale-105 transition-transform pointer-events-none" onerror="this.src='https://via.placeholder.com/200x200?text=No+Image'" />
                         ${isOut ? '<div class="absolute inset-0 bg-black/50 flex items-center justify-center"><span class="bg-red-500 text-white px-2 py-1 md:px-3 text-xs md:text-sm rounded-lg font-bold">Habis</span></div>' : ''}
                         <div class="absolute top-2 right-2 bg-white/90 px-1.5 py-0.5 md:px-2 md:py-1 rounded-md md:rounded-lg shadow-sm text-[10px] md:text-xs font-bold text-indigo-700">Stok: ${p.stock}</div>
+                        ${p.hasTemperature && !isOut ? '<div class="absolute bottom-2 left-2 bg-indigo-600/90 text-white px-1.5 py-0.5 rounded shadow-sm text-[9px] md:text-[10px] font-bold uppercase tracking-widest"><i class="ph-fill ph-asterisk pointer-events-none"></i> Opsi</div>' : ''}
                     </div>
                     <div class="p-2.5 md:p-4 flex-1 flex flex-col justify-between pointer-events-none">
                         <div><p class="text-[10px] md:text-xs text-gray-500 mb-0.5">${p.category}</p><h3 class="font-semibold text-gray-800 text-xs md:text-sm leading-tight line-clamp-2">${p.name}</h3></div>
@@ -576,20 +635,29 @@
             let subtotal = 0;
             container.innerHTML = state.cart.map(item => {
                 subtotal += (Number(item.product.price) * Number(item.quantity));
+                
+                // Show Hot or Iced variant
+                const varBadge = item.variant 
+                    ? `<span class="text-[10px] px-1.5 py-0.5 rounded-md font-bold ml-1 ${item.variant === 'Hot' ? 'bg-red-100 text-red-600' : 'bg-blue-100 text-blue-600'}">${item.variant}</span>` 
+                    : '';
+
                 return `
                 <div class="flex gap-2 md:gap-3 bg-gray-50 p-2 md:p-3 rounded-xl border border-gray-100">
                     <img src="${item.product.image}" class="w-12 h-12 md:w-16 md:h-16 rounded-lg object-cover pointer-events-none" onerror="this.src='https://via.placeholder.com/200x200?text=No+Image'"/>
                     <div class="flex-1 flex flex-col justify-between">
                         <div class="flex justify-between items-start">
-                            <h4 class="font-medium text-xs md:text-sm text-gray-800 pr-1 leading-tight">${item.product.name}</h4>
-                            <button onclick="window.removeFromCart('${item.product.id}')" class="text-gray-400 hover:text-red-500"><i class="ph ph-trash pointer-events-none"></i></button>
+                            <div class="flex-1 pr-1">
+                                <h4 class="font-medium text-xs md:text-sm text-gray-800 leading-tight inline">${item.product.name}</h4>
+                                ${varBadge}
+                            </div>
+                            <button onclick="window.removeFromCart('${item.product.id}', '${item.variant || ''}')" class="text-gray-400 hover:text-red-500 ml-2"><i class="ph ph-trash pointer-events-none"></i></button>
                         </div>
                         <div class="flex justify-between items-center mt-1 md:mt-2">
                             <span class="font-bold text-indigo-600 text-xs md:text-sm">${formatRp(item.product.price)}</span>
                             <div class="flex items-center gap-1 md:gap-2 bg-white rounded-lg border border-gray-200">
-                                <button onclick="window.updateCartQty('${item.product.id}', -1)" class="p-1 text-gray-600 hover:bg-gray-100"><i class="ph ph-minus pointer-events-none text-xs md:text-base"></i></button>
+                                <button onclick="window.updateCartQty('${item.product.id}', '${item.variant || ''}', -1)" class="p-1 text-gray-600 hover:bg-gray-100"><i class="ph ph-minus pointer-events-none text-xs md:text-base"></i></button>
                                 <span class="w-5 md:w-6 text-center font-medium text-xs md:text-sm">${item.quantity}</span>
-                                <button onclick="window.updateCartQty('${item.product.id}', 1)" class="p-1 text-gray-600 hover:bg-gray-100"><i class="ph ph-plus pointer-events-none text-xs md:text-base"></i></button>
+                                <button onclick="window.updateCartQty('${item.product.id}', '${item.variant || ''}', 1)" class="p-1 text-gray-600 hover:bg-gray-100"><i class="ph ph-plus pointer-events-none text-xs md:text-base"></i></button>
                             </div>
                         </div>
                     </div>
@@ -609,47 +677,64 @@
             btnBayar.style.pointerEvents = 'auto';
         };
 
-        window.addToCart = (prodId) => {
+        window.addToCart = (prodId, variant = '') => {
             const product = state.products.find(p => String(p.id) === String(prodId));
             if (!product) return;
-            const exist = state.cart.find(c => String(c.product.id) === String(prodId));
-            if (exist) { if (exist.quantity < Number(product.stock)) exist.quantity++; } 
-            else { state.cart.push({ product, quantity: 1 }); }
+            const exist = state.cart.find(c => String(c.product.id) === String(prodId) && (c.variant || '') === variant);
+            
+            // Perhatikan ketersediaan stok
+            const totalQtySameProduct = state.cart.filter(c => String(c.product.id) === String(prodId)).reduce((sum, item) => sum + item.quantity, 0);
+            
+            if (exist) { 
+                if (totalQtySameProduct < Number(product.stock)) exist.quantity++; 
+                else return window.showNotification("Stok tidak mencukupi!", "error");
+            } else { 
+                if (totalQtySameProduct < Number(product.stock)) state.cart.push({ product, quantity: 1, variant }); 
+                else return window.showNotification("Stok tidak mencukupi!", "error");
+            }
             window.renderCart();
         };
 
-        window.updateCartQty = (prodId, delta) => {
-            const item = state.cart.find(c => String(c.product.id) === String(prodId));
+        window.updateCartQty = (prodId, variant, delta) => {
+            const item = state.cart.find(c => String(c.product.id) === String(prodId) && (c.variant || '') === variant);
             if (!item) return;
+            
+            const totalQtySameProduct = state.cart.filter(c => String(c.product.id) === String(prodId)).reduce((sum, it) => sum + it.quantity, 0);
+
             const newQ = item.quantity + delta;
-            if (newQ > 0 && newQ <= Number(item.product.stock)) item.quantity = newQ;
-            else if (newQ <= 0) state.cart = state.cart.filter(c => String(c.product.id) !== String(prodId));
+            
+            if (delta > 0 && totalQtySameProduct >= Number(item.product.stock)) {
+                return window.showNotification("Stok habis!", "error");
+            }
+
+            if (newQ > 0) item.quantity = newQ;
+            else if (newQ <= 0) state.cart = state.cart.filter(c => !(String(c.product.id) === String(prodId) && (c.variant || '') === variant));
             window.renderCart();
         };
 
-        window.removeFromCart = (prodId) => { state.cart = state.cart.filter(c => String(c.product.id) !== String(prodId)); window.renderCart(); };
+        window.removeFromCart = (prodId, variant) => { 
+            state.cart = state.cart.filter(c => !(String(c.product.id) === String(prodId) && (c.variant || '') === variant)); 
+            window.renderCart(); 
+        };
+        
         window.clearCart = () => { state.cart = []; window.renderCart(); };
 
-        // --- DASHBOARD LOGIC (UPDATED WITH VOID EXCLUSION & DATES) ---
         window.updateDashboardFilter = (val) => {
             state.dashboardFilterMonth = val;
             renderDashboard();
         };
 
         function renderDashboard() {
-            // Hanya proses transaksi yang BUKAN 'VOID'
             const activeTransactions = state.history.filter(h => h.status !== 'VOID');
 
             const todayObj = new Date();
             const todayStr = todayObj.toISOString().split('T')[0];
-            const thisMonthStr = todayStr.substring(0, 7); // format YYYY-MM
+            const thisMonthStr = todayStr.substring(0, 7); 
             
-            // Hitung bulan kemarin
             const lastMonthObj = new Date();
             lastMonthObj.setMonth(lastMonthObj.getMonth() - 1);
             const lastMonthStr = lastMonthObj.toISOString().substring(0, 7);
 
-            // Ringkasan Cepat
             const todayTrx = activeTransactions.filter(h => h.date.startsWith(todayStr));
             const thisMonthTrx = activeTransactions.filter(h => h.date.startsWith(thisMonthStr));
             const lastMonthTrx = activeTransactions.filter(h => h.date.startsWith(lastMonthStr));
@@ -658,7 +743,6 @@
             document.getElementById('dash-revenue-month').innerText = formatRp(thisMonthTrx.reduce((sum, h) => sum + h.total, 0));
             document.getElementById('dash-revenue-lastmonth').innerText = formatRp(lastMonthTrx.reduce((sum, h) => sum + h.total, 0));
 
-            // Filter Berdasarkan Pilihan
             const filterMonth = state.dashboardFilterMonth || thisMonthStr;
             const filterInput = document.getElementById('dash-month-filter');
             if (filterInput && !filterInput.value) filterInput.value = filterMonth;
@@ -667,7 +751,6 @@
             document.getElementById('dash-filter-revenue').innerText = formatRp(filteredTrx.reduce((sum, h) => sum + h.total, 0));
             document.getElementById('dash-filter-count').innerText = `${filteredTrx.length} Transaksi`;
 
-            // Stok Menipis
             const lowStock = state.products.filter(p => Number(p.stock) < 10);
             const lsContainer = document.getElementById('dash-low-stock');
             if (lowStock.length === 0) { lsContainer.innerHTML = '<p class="text-xs md:text-sm text-gray-500">Semua stok aman.</p>'; } 
@@ -682,7 +765,13 @@
         function renderProductsTable() {
             document.getElementById('products-table-body').innerHTML = state.products.map(p => `
                 <tr class="border-b hover:bg-gray-50 text-xs md:text-sm">
-                    <td class="p-3 md:p-4 flex items-center gap-2 md:gap-3 min-w-[200px]"><img src="${p.image}" class="w-8 h-8 md:w-10 md:h-10 rounded-lg object-cover pointer-events-none" onerror="this.src='https://via.placeholder.com/200x200?text=No+Image'" /><span class="font-medium whitespace-normal">${p.name}</span></td>
+                    <td class="p-3 md:p-4 flex items-center gap-2 md:gap-3 min-w-[200px]">
+                        <img src="${p.image}" class="w-8 h-8 md:w-10 md:h-10 rounded-lg object-cover pointer-events-none" onerror="this.src='https://via.placeholder.com/200x200?text=No+Image'" />
+                        <div>
+                            <span class="font-medium whitespace-normal block">${p.name}</span>
+                            ${p.hasTemperature ? '<span class="text-[9px] md:text-[10px] bg-indigo-100 text-indigo-700 font-bold px-1.5 rounded mt-0.5 inline-block">Ada opsi varian</span>' : ''}
+                        </div>
+                    </td>
                     <td class="p-3 md:p-4"><span class="bg-gray-100 text-gray-600 px-2 py-1 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-medium whitespace-nowrap">${p.category}</span></td>
                     <td class="p-3 md:p-4 font-medium whitespace-nowrap">${formatRp(p.price)}</td>
                     <td class="p-3 md:p-4"><span class="font-bold ${Number(p.stock) < 10 ? 'text-red-500' : 'text-green-600'}">${p.stock}</span></td>
@@ -706,7 +795,6 @@
             `).join('');
         }
 
-        // --- HISTORY TABLE (UPDATED WITH VOID UI) ---
         function renderHistoryTable() {
             document.getElementById('history-table-body').innerHTML = state.history.map(t => {
                 const isVoid = t.status === 'VOID';
@@ -719,7 +807,7 @@
                         </div>
                     </td>
                     <td class="p-3 md:p-4 whitespace-nowrap ${isVoid ? 'line-through text-gray-500' : ''}">${new Date(t.date).toLocaleString('id-ID')}</td>
-                    <td class="p-3 md:p-4 whitespace-nowrap ${isVoid ? 'line-through text-gray-500' : ''}">${t.items.length} macam</td>
+                    <td class="p-3 md:p-4 whitespace-nowrap ${isVoid ? 'line-through text-gray-500' : ''}">${t.items.reduce((acc, it) => acc + it.quantity, 0)} Pcs</td>
                     <td class="p-3 md:p-4"><span class="${isVoid ? 'bg-gray-200 text-gray-500' : 'bg-indigo-50 text-indigo-700'} px-2 py-1 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold whitespace-nowrap">${t.paymentMethod}</span></td>
                     <td class="p-3 md:p-4 font-bold text-right whitespace-nowrap ${isVoid ? 'line-through text-gray-500' : ''}">${formatRp(t.total)}</td>
                     <td class="p-3 md:p-4 text-center whitespace-nowrap">
@@ -739,16 +827,14 @@
             if(trx) openReceipt(trx);
         };
 
-        // --- VOID LOGIC (UPDATED: UPDATE INSTEAD OF DELETE) ---
         window.voidTransaction = async (id) => {
             const trx = state.history.find(t => String(t.id) === String(id));
             if(!trx) return;
-            if(trx.status === 'VOID') return; // Mencegah double void
+            if(trx.status === 'VOID') return;
 
             if(!confirm(`Yakin ingin melakukan VOID pada transaksi ${id}?\nTransaksi akan ditandai batal dan stok produk akan dikembalikan.`)) return;
 
             try {
-                // Kembalikan Stok
                 for (const item of trx.items) {
                     const prod = state.products.find(p => String(p.id) === String(item.product.id));
                     if (prod) {
@@ -756,15 +842,13 @@
                     }
                 }
                 
-                // Ubah Status transaksi menjadi VOID, JANGAN dihapus.
                 await dbRef('history').doc(id).update({ status: 'VOID' });
-                
                 window.showNotification("Transaksi berhasil di-VOID");
             } catch (err) { window.showNotification("Gagal melakukan VOID", "error"); }
         };
 
         window.closeModals = () => {
-            const modals = ['modal-product', 'modal-category', 'modal-checkout', 'modal-receipt'];
+            const modals = ['modal-product', 'modal-category', 'modal-checkout', 'modal-receipt', 'modal-variant'];
             modals.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.style.display = 'none';
@@ -778,6 +862,7 @@
             document.getElementById('prod-price').value = '';
             document.getElementById('prod-stock').value = '';
             document.getElementById('prod-image').value = '';
+            document.getElementById('prod-has-temp').checked = false; // Default false
             document.getElementById('modal-product').style.display = 'flex';
         };
 
@@ -793,6 +878,7 @@
                 document.getElementById('prod-price').value = p.price;
                 document.getElementById('prod-stock').value = p.stock;
                 document.getElementById('prod-image').value = p.image || '';
+                document.getElementById('prod-has-temp').checked = p.hasTemperature || false; // Load existing setting
                 
                 document.getElementById('modal-product').style.display = 'flex';
             } catch(e) { console.error(e); alert("Terjadi kesalahan."); }
@@ -809,7 +895,8 @@
                 category: document.getElementById('prod-category').value,
                 price: parseInt(document.getElementById('prod-price').value) || 0, 
                 stock: parseInt(document.getElementById('prod-stock').value) || 0,
-                image: document.getElementById('prod-image').value || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=200'
+                image: document.getElementById('prod-image').value || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&q=80&w=200',
+                hasTemperature: document.getElementById('prod-has-temp').checked // Save boolean status
             };
             try { 
                 await dbRef('products').doc(id).set(data); 
@@ -867,6 +954,7 @@
                 
                 document.getElementById('checkout-total-display').innerText = formatRp(total);
                 document.getElementById('cash-amount').value = '';
+                document.getElementById('checkout-notes').value = ''; // Reset notes field
                 window.setPaymentMethod('Cash');
                 
                 document.getElementById('modal-checkout').style.display = 'flex';
@@ -899,12 +987,15 @@
                 if (paymentAmount < total) return alert("Uang tunai kurang dari total tagihan!");
             }
 
+            const transactionNotes = document.getElementById('checkout-notes').value.trim(); // Grab order notes
+
             const transaction = {
                 id: `TRX-${Date.now()}`, date: new Date().toISOString(), items: state.cart,
                 subtotal: subtotal, tax: 0, total: total,
                 paymentMethod: state.paymentMethod, paymentAmount: paymentAmount,
                 change: state.paymentMethod === 'Cash' ? paymentAmount - total : 0,
-                status: 'SUCCESS' // Menandakan transaksi sukses
+                status: 'SUCCESS',
+                notes: transactionNotes // Save notes to transaction record
             };
 
             try {
@@ -928,10 +1019,19 @@
                 <div class="flex justify-between"><span>Tgl:</span><span>${new Date(trx.date).toLocaleString('id-ID')}</span></div>
                 <div class="flex justify-between"><span>Tipe:</span><span class="uppercase">${trx.paymentMethod}</span></div>
             `;
-            document.getElementById('receipt-items').innerHTML = trx.items.map(i => `
-                <div><p class="font-medium">${i.product.name}</p>
-                <div class="flex justify-between text-[10px] md:text-xs text-gray-600"><span>${i.quantity} x ${formatRp(i.product.price)}</span><span>${formatRp(i.quantity * i.product.price)}</span></div></div>
-            `).join('');
+            document.getElementById('receipt-items').innerHTML = trx.items.map(i => {
+                const varName = i.variant ? `${i.product.name} (${i.variant})` : i.product.name;
+                return `<div><p class="font-medium">${varName}</p>
+                <div class="flex justify-between text-[10px] md:text-xs text-gray-600"><span>${i.quantity} x ${formatRp(i.product.price)}</span><span>${formatRp(i.quantity * i.product.price)}</span></div></div>`;
+            }).join('');
+
+            // Inject Notes to receipt if available
+            const notesEl = document.getElementById('receipt-notes');
+            if (trx.notes && trx.notes.trim() !== '') {
+                notesEl.innerHTML = `<div class="text-[10px] md:text-xs mb-3 italic p-2 bg-gray-100 rounded break-words"><strong>Catatan:</strong> ${trx.notes}</div>`;
+            } else {
+                notesEl.innerHTML = '';
+            }
 
             let summaryHTML = `
                 <div class="flex justify-between font-bold text-sm md:text-base mt-2 pt-2 border-t border-black"><span>TOTAL:</span><span>${formatRp(trx.total)}</span></div>
